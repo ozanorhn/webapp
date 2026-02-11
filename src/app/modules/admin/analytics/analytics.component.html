@@ -1,0 +1,292 @@
+<div class="analytics-container">
+    <div class="analytics-header">
+        <h1 class="analytics-title">Analytics</h1>
+        <p class="analytics-subtitle">
+            Detaillierte Einblicke in Ihre Website-Performance
+        </p>
+
+        <div class="period-selector">
+            <mat-form-field appearance="outline">
+                <mat-label>Zeitraum</mat-label>
+                <mat-select [(ngModel)]="selectedPeriod">
+                    <mat-option value="24h">Letzte 24 Stunden</mat-option>
+                    <mat-option value="7d">Letzte 7 Tage</mat-option>
+                    <mat-option value="30d">Letzte 30 Tage</mat-option>
+                    <mat-option value="90d">Letzte 90 Tage</mat-option>
+                </mat-select>
+            </mat-form-field>
+        </div>
+    </div>
+
+    <!-- Traffic Overview -->
+    <div class="traffic-overview">
+        <div *ngFor="let stat of trafficStats" class="traffic-card">
+            <div class="traffic-icon">
+                <mat-icon>trending_up</mat-icon>
+            </div>
+            <div class="traffic-content">
+                <div class="traffic-label">{{ stat.label }}</div>
+                <div class="traffic-value">{{ stat.value }}</div>
+                <div
+                    class="traffic-change"
+                    [class.positive]="stat.trend === 'up'"
+                    [class.negative]="stat.trend === 'down'"
+                >
+                    {{ stat.change }}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Content -->
+    <mat-tab-group class="analytics-tabs">
+        <!-- Traffic Sources Tab -->
+        <mat-tab label="Traffic-Quellen">
+            <div class="tab-content">
+                <div class="content-grid">
+                    <!-- Traffic Sources Chart -->
+                    <mat-card class="sources-card">
+                        <mat-card-header>
+                            <mat-card-title>Traffic-Quellen</mat-card-title>
+                        </mat-card-header>
+                        <mat-card-content>
+                            <div class="sources-chart">
+                                <div class="pie-chart-container">
+                                    <div class="pie-chart">
+                                        <div
+                                            *ngFor="
+                                                let source of trafficSources;
+                                                let i = index
+                                            "
+                                            class="pie-slice"
+                                            [style.background]="
+                                                'conic-gradient(' +
+                                                source.color +
+                                                ' 0deg ' +
+                                                source.percentage * 3.6 +
+                                                'deg, transparent ' +
+                                                source.percentage * 3.6 +
+                                                'deg)'
+                                            "
+                                            [style.transform]="
+                                                getPieRotation(i)
+                                            "
+                                        ></div>
+                                    </div>
+                                </div>
+                                <div class="sources-legend">
+                                    <div
+                                        *ngFor="let source of trafficSources"
+                                        class="legend-item"
+                                    >
+                                        <div
+                                            class="legend-color"
+                                            [style.background]="source.color"
+                                        ></div>
+                                        <div class="legend-info">
+                                            <div class="legend-source">
+                                                {{ source.source }}
+                                            </div>
+                                            <div class="legend-stats">
+                                                {{
+                                                    source.visitors.toLocaleString()
+                                                }}
+                                                ({{ source.percentage }}%)
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+
+                    <!-- Device Stats -->
+                    <mat-card class="devices-card">
+                        <mat-card-header>
+                            <mat-card-title>Geräte-Statistik</mat-card-title>
+                        </mat-card-header>
+                        <mat-card-content>
+                            <div class="device-stats">
+                                <div class="device-item">
+                                    <div class="device-icon desktop">
+                                        <mat-icon>computer</mat-icon>
+                                    </div>
+                                    <div class="device-info">
+                                        <div class="device-name">Desktop</div>
+                                        <div class="device-value">
+                                            {{
+                                                deviceStats.desktop.users.toLocaleString()
+                                            }}
+                                        </div>
+                                        <mat-progress-bar
+                                            mode="determinate"
+                                            [value]="
+                                                deviceStats.desktop.percentage
+                                            "
+                                        >
+                                        </mat-progress-bar>
+                                        <div class="device-percentage">
+                                            {{
+                                                deviceStats.desktop.percentage
+                                            }}%
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="device-item">
+                                    <div class="device-icon mobile">
+                                        <mat-icon>smartphone</mat-icon>
+                                    </div>
+                                    <div class="device-info">
+                                        <div class="device-name">Mobile</div>
+                                        <div class="device-value">
+                                            {{
+                                                deviceStats.mobile.users.toLocaleString()
+                                            }}
+                                        </div>
+                                        <mat-progress-bar
+                                            mode="determinate"
+                                            [value]="
+                                                deviceStats.mobile.percentage
+                                            "
+                                        >
+                                        </mat-progress-bar>
+                                        <div class="device-percentage">
+                                            {{ deviceStats.mobile.percentage }}%
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="device-item">
+                                    <div class="device-icon tablet">
+                                        <mat-icon>tablet</mat-icon>
+                                    </div>
+                                    <div class="device-info">
+                                        <div class="device-name">Tablet</div>
+                                        <div class="device-value">
+                                            {{
+                                                deviceStats.tablet.users.toLocaleString()
+                                            }}
+                                        </div>
+                                        <mat-progress-bar
+                                            mode="determinate"
+                                            [value]="
+                                                deviceStats.tablet.percentage
+                                            "
+                                        >
+                                        </mat-progress-bar>
+                                        <div class="device-percentage">
+                                            {{ deviceStats.tablet.percentage }}%
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </mat-card-content>
+                    </mat-card>
+                </div>
+            </div>
+        </mat-tab>
+
+        <!-- Top Pages Tab -->
+        <mat-tab label="Top Seiten">
+            <div class="tab-content">
+                <mat-card class="pages-card">
+                    <mat-card-header>
+                        <mat-card-title>Meistbesuchte Seiten</mat-card-title>
+                        <button mat-raised-button color="primary">
+                            <mat-icon>download</mat-icon>
+                            Export
+                        </button>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="pages-table">
+                            <div class="table-header">
+                                <div class="header-cell">Seite</div>
+                                <div class="header-cell">Aufrufe</div>
+                                <div class="header-cell">Unique</div>
+                                <div class="header-cell">Avg. Zeit</div>
+                                <div class="header-cell">Bounce Rate</div>
+                            </div>
+                            <div
+                                *ngFor="let page of topPages"
+                                class="table-row"
+                            >
+                                <div class="cell page-cell">
+                                    <span class="page-url">{{
+                                        page.page
+                                    }}</span>
+                                </div>
+                                <div class="cell">
+                                    {{ page.views.toLocaleString() }}
+                                </div>
+                                <div class="cell">
+                                    {{ page.unique.toLocaleString() }}
+                                </div>
+                                <div class="cell">{{ page.avgTime }}</div>
+                                <div class="cell">
+                                    <span
+                                        class="bounce-rate"
+                                        [class.low]="
+                                            parseInt(page.bounceRate) < 30
+                                        "
+                                        [class.medium]="
+                                            parseInt(page.bounceRate) >= 30 &&
+                                            parseInt(page.bounceRate) < 60
+                                        "
+                                        [class.high]="
+                                            parseInt(page.bounceRate) >= 60
+                                        "
+                                    >
+                                        {{ page.bounceRate }}
+                                    </span>
+                                </div>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </mat-tab>
+
+        <!-- Conversion Tab -->
+        <mat-tab label="Conversion Funnel">
+            <div class="tab-content">
+                <mat-card class="funnel-card">
+                    <mat-card-header>
+                        <mat-card-title>Conversion Funnel</mat-card-title>
+                    </mat-card-header>
+                    <mat-card-content>
+                        <div class="funnel-chart">
+                            <div
+                                *ngFor="
+                                    let stage of conversionFunnel;
+                                    let i = index
+                                "
+                                class="funnel-stage"
+                            >
+                                <div class="stage-info">
+                                    <div class="stage-name">
+                                        {{ stage.stage }}
+                                    </div>
+                                    <div class="stage-count">
+                                        {{ stage.count.toLocaleString() }}
+                                    </div>
+                                    <div
+                                        class="stage-dropoff"
+                                        *ngIf="stage.dropoff > 0"
+                                    >
+                                        -{{ stage.dropoff.toFixed(1) }}%
+                                    </div>
+                                </div>
+                                <div
+                                    class="stage-bar"
+                                    [style.width.%]="100 - i * 15"
+                                    [style.opacity]="1 - i * 0.1"
+                                ></div>
+                            </div>
+                        </div>
+                    </mat-card-content>
+                </mat-card>
+            </div>
+        </mat-tab>
+    </mat-tab-group>
+</div>

@@ -1,0 +1,74 @@
+<div class="dashboard-container">
+    <div class="dashboard-header">
+        <h1 class="dashboard-title">Dashboard</h1>
+        <p class="dashboard-subtitle">Willkommen zurück! Hier ist Ihre Übersicht.</p>
+    </div>
+
+    <!-- KPI Cards -->
+    <mat-grid-list cols="4" rowHeight="120px" class="kpi-grid">
+        <mat-grid-tile *ngFor="let kpi of kpiData; let i = index">
+            <mat-card class="kpi-card" [class.trend-up]="kpi.trend === 'up'" [class.trend-down]="kpi.trend === 'down'">
+                <div class="kpi-content">
+                    <div class="kpi-icon">
+                        <mat-icon>{{ kpi.icon }}</mat-icon>
+                    </div>
+                    <div class="kpi-info">
+                        <div class="kpi-title">{{ kpi.title }}</div>
+                        <div class="kpi-value">{{ kpi.value }}</div>
+                        <div class="kpi-change" [class.positive]="kpi.trend === 'up'" [class.negative]="kpi.trend === 'down'">
+                            {{ kpi.change }}
+                        </div>
+                    </div>
+                </div>
+            </mat-card>
+        </mat-grid-tile>
+    </mat-grid-list>
+
+    <!-- Main Content Grid -->
+    <div class="content-grid">
+        <!-- Recent Activities -->
+        <mat-card class="activities-card">
+            <mat-card-header>
+                <mat-card-title>Aktuelle Aktivitäten</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="activities-list">
+                    <div *ngFor="let activity of recentActivities" class="activity-item">
+                        <div class="activity-indicator" [class]="activity.type"></div>
+                        <div class="activity-content">
+                            <div class="activity-message">{{ activity.message }}</div>
+                            <div class="activity-time">{{ activity.time }}</div>
+                        </div>
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Quick Actions -->
+        <mat-card class="quick-actions-card">
+            <mat-card-header>
+                <mat-card-title>Schnellaktionen</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="actions-grid">
+                    <button mat-raised-button color="primary" class="action-btn">
+                        <mat-icon>search</mat-icon>
+                        SEO-Check
+                    </button>
+                    <button mat-raised-button color="accent" class="action-btn">
+                        <mat-icon>analytics</mat-icon>
+                        Berichte
+                    </button>
+                    <button mat-raised-button color="warn" class="action-btn">
+                        <mat-icon>settings</mat-icon>
+                        Einstellungen
+                    </button>
+                    <button mat-raised-button color="primary" class="action-btn">
+                        <mat-icon>download</mat-icon>
+                        Export
+                    </button>
+                </div>
+            </mat-card-content>
+        </mat-card>
+    </div>
+</div>

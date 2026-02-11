@@ -85,15 +85,19 @@ export const appConfig: ApplicationConfig = {
             },
             fuse: {
                 layout: 'classy',
-                scheme: 'light',
+                scheme: 'dark',
                 screens: {
                     sm: '600px',
                     md: '960px',
                     lg: '1280px',
                     xl: '1440px',
                 },
-                theme: 'theme-default',
+                theme: 'theme-professional',
                 themes: [
+                    {
+                        id: 'theme-professional',
+                        name: 'Professional Dark',
+                    },
                     {
                         id: 'theme-default',
                         name: 'Default',
@@ -101,22 +105,6 @@ export const appConfig: ApplicationConfig = {
                     {
                         id: 'theme-brand',
                         name: 'Brand',
-                    },
-                    {
-                        id: 'theme-teal',
-                        name: 'Teal',
-                    },
-                    {
-                        id: 'theme-rose',
-                        name: 'Rose',
-                    },
-                    {
-                        id: 'theme-purple',
-                        name: 'Purple',
-                    },
-                    {
-                        id: 'theme-amber',
-                        name: 'Amber',
                     },
                 ],
             },

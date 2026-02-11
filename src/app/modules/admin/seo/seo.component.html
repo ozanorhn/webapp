@@ -1,0 +1,223 @@
+<div class="seo-container">
+    <div class="seo-header">
+        <h1 class="seo-title">SEO-Analyse</h1>
+        <p class="seo-subtitle">Überwachen und optimieren Sie Ihre SEO-Performance</p>
+    </div>
+
+    <!-- SEO Score Overview -->
+    <div class="score-grid">
+        <mat-card class="score-card">
+            <mat-card-header>
+                <mat-card-title>SEO-Score</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="score-circle">
+                    <div class="score-value">89</div>
+                    <div class="score-label">Exzellent</div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card class="score-card">
+            <mat-card-header>
+                <mat-card-title>Keywords</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="metric-value">47</div>
+                <div class="metric-change positive">+5</div>
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card class="score-card">
+            <mat-card-header>
+                <mat-card-title>Backlinks</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="metric-value">234</div>
+                <div class="metric-change positive">+12</div>
+            </mat-card-content>
+        </mat-card>
+
+        <mat-card class="score-card">
+            <mat-card-header>
+                <mat-card-title>Organic Traffic</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="metric-value">12.8K</div>
+                <div class="metric-change positive">+18%</div>
+            </mat-card-content>
+        </mat-card>
+    </div>
+
+    <!-- Main Content -->
+    <div class="content-grid">
+        <!-- Keywords Table -->
+        <mat-card class="keywords-card">
+            <mat-card-header>
+                <mat-card-title>Top Keywords</mat-card-title>
+                <div class="filters">
+                    <mat-form-field appearance="outline" class="filter-field">
+                        <mat-label>Filter</mat-label>
+                        <mat-select [(ngModel)]="selectedFilter">
+                            <mat-option value="all">Alle</mat-option>
+                            <mat-option value="improving">Verbessernd</mat-option>
+                            <mat-option value="declining">Rückläufig</mat-option>
+                        </mat-select>
+                    </mat-form-field>
+                </div>
+            </mat-card-header>
+            <mat-card-content>
+                <table mat-table [dataSource]="keywordsData" class="keywords-table">
+                    <ng-container matColumnDef="keyword">
+                        <th mat-header-cell *matHeaderCellDef>Keyword</th>
+                        <td mat-cell *matCellDef="let keyword">
+                            <span class="keyword-text">{{ keyword.keyword }}</span>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="position">
+                        <th mat-header-cell *matHeaderCellDef>Position</th>
+                        <td mat-cell *matCellDef="let keyword">
+                            <span class="position-badge" [class.top-position]="keyword.position <= 3">
+                                #{{ keyword.position }}
+                            </span>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="searchVolume">
+                        <th mat-header-cell *matHeaderCellDef>Suchvolumen</th>
+                        <td mat-cell *matCellDef="let keyword">{{ keyword.searchVolume }}</td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="competition">
+                        <th mat-header-cell *matHeaderCellDef>Wettbewerb</th>
+                        <td mat-cell *matCellDef="let keyword">
+                            <mat-chip-list>
+                                <mat-chip [class]="keyword.competition.toLowerCase()" selected>
+                                    {{ keyword.competition }}
+                                </mat-chip>
+                            </mat-chip-list>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="trend">
+                        <th mat-header-cell *matHeaderCellDef>Trend</th>
+                        <td mat-cell *matCellDef="let keyword">
+                            <div class="trend-indicator" [class]="keyword.trend">
+                                <mat-icon>{{ keyword.trend === 'up' ? 'trending_up' : 'trending_down' }}</mat-icon>
+                                <span>{{ keyword.change }}</span>
+                            </div>
+                        </td>
+                    </ng-container>
+
+                    <ng-container matColumnDef="actions">
+                        <th mat-header-cell *matHeaderCellDef></th>
+                        <td mat-cell *matCellDef="let keyword">
+                            <button mat-icon-button>
+                                <mat-icon>more_vert</mat-icon>
+                            </button>
+                        </td>
+                    </ng-container>
+
+                    <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                    <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+                </table>
+            </mat-card-content>
+        </mat-card>
+
+        <!-- Page Speed Analysis -->
+        <mat-card class="speed-card">
+            <mat-card-header>
+                <mat-card-title>Page Speed Insights</mat-card-title>
+            </mat-card-header>
+            <mat-card-content>
+                <div class="speed-metrics">
+                    <div class="metric">
+                        <div class="metric-header">
+                            <span class="metric-name">Desktop</span>
+                            <span class="metric-score">{{ pageSpeed.desktop }}</span>
+                        </div>
+                        <mat-progress-bar 
+                            mode="determinate" 
+                            [value]="pageSpeed.desktop"
+                            [class.good]="pageSpeed.desktop >= 90"
+                            [class.okay]="pageSpeed.desktop >= 50 && pageSpeed.desktop < 90"
+                            [class.poor]="pageSpeed.desktop < 50">
+                        </mat-progress-bar>
+                    </div>
+
+                    <div class="metric">
+                        <div class="metric-header">
+                            <span class="metric-name">Mobile</span>
+                            <span class="metric-score">{{ pageSpeed.mobile }}</span>
+                        </div>
+                        <mat-progress-bar 
+                            mode="determinate" 
+                            [value]="pageSpeed.mobile"
+                            [class.good]="pageSpeed.mobile >= 90"
+                            [class.okay]="pageSpeed.mobile >= 50 && pageSpeed.mobile < 90"
+                            [class.poor]="pageSpeed.mobile < 50">
+                        </mat-progress-bar>
+                    </div>
+
+                    <div class="metric">
+                        <div class="metric-header">
+                            <span class="metric-name">Accessibility</span>
+                            <span class="metric-score">{{ pageSpeed.accessibility }}</span>
+                        </div>
+                        <mat-progress-bar 
+                            mode="determinate" 
+                            [value]="pageSpeed.accessibility"
+                            [class.good]="pageSpeed.accessibility >= 90"
+                            [class.okay]="pageSpeed.accessibility >= 50 && pageSpeed.accessibility < 90"
+                            [class.poor]="pageSpeed.accessibility < 50">
+                        </mat-progress-bar>
+                    </div>
+
+                    <div class="metric">
+                        <div class="metric-header">
+                            <span class="metric-name">Best Practices</span>
+                            <span class="metric-score">{{ pageSpeed.bestPractices }}</span>
+                        </div>
+                        <mat-progress-bar 
+                            mode="determinate" 
+                            [value]="pageSpeed.bestPractices"
+                            [class.good]="pageSpeed.bestPractices >= 90"
+                            [class.okay]="pageSpeed.bestPractices >= 50 && pageSpeed.bestPractices < 90"
+                            [class.poor]="pageSpeed.bestPractices < 50">
+                        </mat-progress-bar>
+                    </div>
+                </div>
+            </mat-card-content>
+        </mat-card>
+    </div>
+
+    <!-- Backlinks Section -->
+    <mat-card class="backlinks-card">
+        <mat-card-header>
+            <mat-card-title>Top Backlinks</mat-card-title>
+            <button mat-raised-button color="primary">
+                <mat-icon>add</mat-icon>
+                Backlink hinzufügen
+            </button>
+        </mat-card-header>
+        <mat-card-content>
+            <div class="backlinks-list">
+                <div *ngFor="let backlink of backlinks" class="backlink-item">
+                    <div class="backlink-info">
+                        <div class="backlink-source">{{ backlink.source }}</div>
+                        <div class="backlink-stats">
+                            <span class="stat">DA: {{ backlink.domainAuthority }}</span>
+                            <span class="stat">Traffic: {{ backlink.traffic }}</span>
+                        </div>
+                    </div>
+                    <div class="backlink-status">
+                        <mat-chip [class]="backlink.status" selected>
+                            {{ backlink.status === 'active' ? 'Aktiv' : 'Ausstehend' }}
+                        </mat-chip>
+                    </div>
+                </div>
+            </div>
+        </mat-card-content>
+    </mat-card>
+</div>

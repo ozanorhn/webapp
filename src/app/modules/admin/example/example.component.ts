@@ -1,11 +1,10 @@
-import { DecimalPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
+    NO_ERRORS_SCHEMA,
     OnDestroy,
     OnInit,
     ViewEncapsulation,
-    NO_ERRORS_SCHEMA,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatButtonToggleModule } from '@angular/material/button-toggle';
@@ -14,7 +13,7 @@ import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router } from '@angular/router';
 import { ApexOptions } from 'ng-apexcharts';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject } from 'rxjs';
 
 @Component({
     selector: 'example',
@@ -27,7 +26,6 @@ import { Subject, takeUntil } from 'rxjs';
         MatMenuModule,
         MatButtonToggleModule,
         MatTooltipModule,
-        DecimalPipe,
     ],
     schemas: [NO_ERRORS_SCHEMA],
 })
@@ -157,7 +155,9 @@ export class ExampleComponent implements OnInit, OnDestroy {
                 amount: 8456,
                 series: [
                     {
-                        data: [145, 152, 148, 161, 158, 172, 168, 178, 182, 188],
+                        data: [
+                            145, 152, 148, 161, 158, 172, 168, 178, 182, 188,
+                        ],
                     },
                 ],
                 labels: [
