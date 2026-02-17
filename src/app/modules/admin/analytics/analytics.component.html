@@ -1,0 +1,257 @@
+<div class="flex w-full flex-auto flex-col">
+    <div class="mx-auto flex w-full max-w-screen-xl flex-wrap p-6 md:p-8">
+
+        <!-- Page Header -->
+        <div class="w-full mb-8">
+            <div class="text-4xl font-bold tracking-tight">Analytics</div>
+            <div class="text-secondary font-medium tracking-tight mt-2">
+                Website traffic and user behavior insights
+            </div>
+        </div>
+
+        <!-- KPI Bar -->
+        <div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <!-- Sessions -->
+            <div class="bg-card rounded-2xl shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-secondary text-sm font-medium">SESSIONS</div>
+                        <div class="text-3xl font-bold mt-2">{{data.kpis.sessions.value | number}}</div>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
+                        <mat-icon class="text-blue-600 dark:text-blue-400 icon-size-6" [svgIcon]="'heroicons_solid:cursor-arrow-rays'"></mat-icon>
+                    </div>
+                </div>
+                <div class="flex items-center mt-4">
+                    <span class="text-green-600 font-semibold text-sm">
+                        <mat-icon class="icon-size-4 inline mr-1" [svgIcon]="'heroicons_solid:arrow-trending-up'"></mat-icon>
+                        {{data.kpis.sessions.change}}%
+                    </span>
+                    <span class="text-secondary text-xs ml-2">vs last period</span>
+                </div>
+            </div>
+
+            <!-- Bounce Rate -->
+            <div class="bg-card rounded-2xl shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-secondary text-sm font-medium">BOUNCE RATE</div>
+                        <div class="text-3xl font-bold mt-2">{{data.kpis.bounceRate.value}}%</div>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900">
+                        <mat-icon class="text-red-600 dark:text-red-400 icon-size-6" [svgIcon]="'heroicons_solid:arrow-uturn-left'"></mat-icon>
+                    </div>
+                </div>
+                <div class="flex items-center mt-4">
+                    <span class="text-green-600 font-semibold text-sm">
+                        <mat-icon class="icon-size-4 inline mr-1" [svgIcon]="'heroicons_solid:arrow-trending-down'"></mat-icon>
+                        {{data.kpis.bounceRate.change}}%
+                    </span>
+                    <span class="text-secondary text-xs ml-2">vs last period</span>
+                </div>
+            </div>
+
+            <!-- Session Duration -->
+            <div class="bg-card rounded-2xl shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-secondary text-sm font-medium">AVG. SESSION DURATION</div>
+                        <div class="text-3xl font-bold mt-2">{{data.kpis.sessionDuration.value}}</div>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900">
+                        <mat-icon class="text-green-600 dark:text-green-400 icon-size-6" [svgIcon]="'heroicons_solid:clock'"></mat-icon>
+                    </div>
+                </div>
+                <div class="flex items-center mt-4">
+                    <span class="text-green-600 font-semibold text-sm">
+                        <mat-icon class="icon-size-4 inline mr-1" [svgIcon]="'heroicons_solid:arrow-trending-up'"></mat-icon>
+                        {{data.kpis.sessionDuration.change}}%
+                    </span>
+                    <span class="text-secondary text-xs ml-2">vs last period</span>
+                </div>
+            </div>
+
+            <!-- Pages per Session -->
+            <div class="bg-card rounded-2xl shadow p-6">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <div class="text-secondary text-sm font-medium">PAGES / SESSION</div>
+                        <div class="text-3xl font-bold mt-2">{{data.kpis.pagesPerSession.value}}</div>
+                    </div>
+                    <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900">
+                        <mat-icon class="text-purple-600 dark:text-purple-400 icon-size-6" [svgIcon]="'heroicons_solid:document-duplicate'"></mat-icon>
+                    </div>
+                </div>
+                <div class="flex items-center mt-4">
+                    <span class="text-green-600 font-semibold text-sm">
+                        <mat-icon class="icon-size-4 inline mr-1" [svgIcon]="'heroicons_solid:arrow-trending-up'"></mat-icon>
+                        {{data.kpis.pagesPerSession.change}}%
+                    </span>
+                    <span class="text-secondary text-xs ml-2">vs last period</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visitors Area Chart -->
+        <div class="w-full mb-8">
+            <div class="bg-card rounded-2xl shadow overflow-hidden">
+                <div class="p-6 pb-0">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-2xl font-semibold tracking-tight">Visitors & Page Views</div>
+                            <div class="text-secondary font-medium">Weekly traffic over time</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="h-80 p-6 pt-4">
+                    <apx-chart
+                        [chart]="chartVisitors.chart"
+                        [colors]="chartVisitors.colors"
+                        [dataLabels]="chartVisitors.dataLabels"
+                        [fill]="chartVisitors.fill"
+                        [grid]="chartVisitors.grid"
+                        [series]="chartVisitors.series"
+                        [stroke]="chartVisitors.stroke"
+                        [tooltip]="chartVisitors.tooltip"
+                        [xaxis]="chartVisitors.xaxis"
+                        [yaxis]="chartVisitors.yaxis"></apx-chart>
+                </div>
+            </div>
+        </div>
+
+        <!-- Donut Charts Row -->
+        <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            <!-- Devices -->
+            <div class="bg-card rounded-2xl shadow overflow-hidden">
+                <div class="p-6 pb-0">
+                    <div class="text-lg font-semibold tracking-tight">Devices</div>
+                    <div class="text-secondary text-sm">Traffic by device type</div>
+                </div>
+                <div class="flex flex-col items-center p-6">
+                    <div class="h-52 w-52">
+                        <apx-chart
+                            [chart]="chartDevices.chart"
+                            [colors]="chartDevices.colors"
+                            [labels]="chartDevices.labels"
+                            [plotOptions]="chartDevices.plotOptions"
+                            [series]="chartDevices.series"
+                            [states]="chartDevices.states"
+                            [tooltip]="chartDevices.tooltip"></apx-chart>
+                    </div>
+                    <div class="mt-4 w-full space-y-2">
+                        @for (label of data.devices.labels; track label; let i = $index) {
+                            <div class="flex items-center justify-between text-sm">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full mr-2" [style.background-color]="['#3182CE','#63B3ED','#BEE3F8'][i]"></div>
+                                    <span>{{label}}</span>
+                                </div>
+                                <span class="font-semibold">{{data.devices.series[i]}}%</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Browsers -->
+            <div class="bg-card rounded-2xl shadow overflow-hidden">
+                <div class="p-6 pb-0">
+                    <div class="text-lg font-semibold tracking-tight">Browsers</div>
+                    <div class="text-secondary text-sm">Traffic by browser</div>
+                </div>
+                <div class="flex flex-col items-center p-6">
+                    <div class="h-52 w-52">
+                        <apx-chart
+                            [chart]="chartBrowsers.chart"
+                            [colors]="chartBrowsers.colors"
+                            [labels]="chartBrowsers.labels"
+                            [plotOptions]="chartBrowsers.plotOptions"
+                            [series]="chartBrowsers.series"
+                            [states]="chartBrowsers.states"
+                            [tooltip]="chartBrowsers.tooltip"></apx-chart>
+                    </div>
+                    <div class="mt-4 w-full space-y-2">
+                        @for (label of data.browsers.labels; track label; let i = $index) {
+                            <div class="flex items-center justify-between text-sm">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full mr-2" [style.background-color]="['#319795','#4FD1C5','#81E6D9','#B2F5EA','#E6FFFA'][i]"></div>
+                                    <span>{{label}}</span>
+                                </div>
+                                <span class="font-semibold">{{data.browsers.series[i]}}%</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Operating Systems -->
+            <div class="bg-card rounded-2xl shadow overflow-hidden">
+                <div class="p-6 pb-0">
+                    <div class="text-lg font-semibold tracking-tight">Operating Systems</div>
+                    <div class="text-secondary text-sm">Traffic by OS</div>
+                </div>
+                <div class="flex flex-col items-center p-6">
+                    <div class="h-52 w-52">
+                        <apx-chart
+                            [chart]="chartOS.chart"
+                            [colors]="chartOS.colors"
+                            [labels]="chartOS.labels"
+                            [plotOptions]="chartOS.plotOptions"
+                            [series]="chartOS.series"
+                            [states]="chartOS.states"
+                            [tooltip]="chartOS.tooltip"></apx-chart>
+                    </div>
+                    <div class="mt-4 w-full space-y-2">
+                        @for (label of data.os.labels; track label; let i = $index) {
+                            <div class="flex items-center justify-between text-sm">
+                                <div class="flex items-center">
+                                    <div class="w-3 h-3 rounded-full mr-2" [style.background-color]="['#805AD5','#B794F4','#D6BCFA','#E9D8FD','#FAF5FF'][i]"></div>
+                                    <span>{{label}}</span>
+                                </div>
+                                <span class="font-semibold">{{data.os.series[i]}}%</span>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Pages Table -->
+        <div class="w-full">
+            <div class="bg-card rounded-2xl shadow overflow-hidden">
+                <div class="p-6 pb-4">
+                    <div class="text-2xl font-semibold tracking-tight">Top Pages</div>
+                    <div class="text-secondary font-medium">Most visited pages by session count</div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full">
+                        <thead>
+                            <tr class="border-b border-gray-200 dark:border-gray-700">
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-secondary uppercase tracking-wider">Page</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-secondary uppercase tracking-wider">Path</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-secondary uppercase tracking-wider">Sessions</th>
+                                <th class="px-6 py-3 text-right text-xs font-semibold text-secondary uppercase tracking-wider">%</th>
+                                <th class="px-6 py-3 text-left text-xs font-semibold text-secondary uppercase tracking-wider w-48">Traffic</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @for (page of data.topPages; track page.path) {
+                                <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+                                    <td class="px-6 py-4 text-sm font-semibold">{{page.title}}</td>
+                                    <td class="px-6 py-4 text-sm text-secondary font-mono">{{page.path}}</td>
+                                    <td class="px-6 py-4 text-sm text-right font-semibold">{{page.sessions | number}}</td>
+                                    <td class="px-6 py-4 text-sm text-right text-secondary">{{page.percentage}}%</td>
+                                    <td class="px-6 py-4">
+                                        <div class="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                            <div class="h-full bg-primary rounded-full" [style.width.%]="page.percentage"></div>
+                                        </div>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</div>

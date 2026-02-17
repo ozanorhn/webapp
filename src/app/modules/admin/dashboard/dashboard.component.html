@@ -1,0 +1,335 @@
+<div class="flex w-full flex-auto flex-col">
+    <div class="mx-auto flex w-full max-w-screen-xl flex-wrap p-6 md:p-8">
+
+        <!-- Header with Reload Button -->
+        <div class="w-full mb-8 flex items-center justify-between">
+            <div>
+                <div class="text-4xl font-bold tracking-tight">
+                    Website Report
+                </div>
+                <div class="text-secondary font-medium tracking-tight mt-2">
+                    @if (reportDate) {
+                        Bericht vom {{reportDate | date:'dd.MM.yyyy'}}
+                    } @else {
+                        Lade Berichtsdaten...
+                    }
+                </div>
+            </div>
+            <button mat-flat-button
+                    color="primary"
+                    (click)="loadReport()"
+                    [disabled]="loading"
+                    class="flex items-center gap-2">
+                @if (loading) {
+                    <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                    <mat-icon [svgIcon]="'heroicons_outline:arrow-path'"></mat-icon>
+                }
+                Neu laden
+            </button>
+        </div>
+
+        <!-- Error Message -->
+        @if (error) {
+            <div class="w-full mb-8">
+                <div class="bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-2xl p-6 text-red-700 dark:text-red-300">
+                    <div class="flex items-center gap-3">
+                        <mat-icon class="text-red-500" [svgIcon]="'heroicons_outline:exclamation-triangle'"></mat-icon>
+                        <span class="font-medium">{{error}}</span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Loading State -->
+        @if (loading && !summary) {
+            <div class="w-full flex items-center justify-center py-20">
+                <mat-spinner diameter="48"></mat-spinner>
+            </div>
+        }
+
+        <!-- Dashboard Content -->
+        @if (summary) {
+            <!-- Summary KPI Cards -->
+            <div class="w-full mb-8">
+                <div class="bg-gradient-to-r from-primary to-primary/80 rounded-2xl shadow-lg overflow-hidden">
+                    <div class="p-8 text-white">
+                        <div class="text-sm font-semibold opacity-90 mb-2">ZUSAMMENFASSUNG</div>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                            <div>
+                                <div class="text-4xl font-bold">{{summary.total_sessions | number}}</div>
+                                <div class="text-sm opacity-90 mt-2">Sessions Gesamt</div>
+                            </div>
+                            <div>
+                                <div class="text-4xl font-bold">{{summary.total_leads | number}}</div>
+                                <div class="text-sm opacity-90 mt-2">Leads Gesamt</div>
+                            </div>
+                            <div>
+                                <div class="text-4xl font-bold">{{summary.conversion_rate}}%</div>
+                                <div class="text-sm opacity-90 mt-2">Conversion Rate</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row: Top Pages + Sources -->
+            <div class="w-full grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+                <!-- Top Pages Chart -->
+                @if (chartTopPages) {
+                    <div class="lg:col-span-2 bg-card rounded-2xl shadow overflow-hidden">
+                        <div class="p-6 pb-0">
+                            <div class="text-2xl font-semibold tracking-tight">Top 10 Seiten</div>
+                            <div class="text-secondary font-medium">Sessions & Leads nach Seite</div>
+                        </div>
+                        <div class="h-96 p-6 pt-4">
+                            <apx-chart
+                                [chart]="chartTopPages.chart"
+                                [plotOptions]="chartTopPages.plotOptions"
+                                [colors]="chartTopPages.colors"
+                                [series]="chartTopPages.series"
+                                [xaxis]="chartTopPages.xaxis"
+                                [yaxis]="chartTopPages.yaxis"
+                                [legend]="chartTopPages.legend"
+                                [dataLabels]="chartTopPages.dataLabels"
+                                [grid]="chartTopPages.grid"
+                                [tooltip]="chartTopPages.tooltip"></apx-chart>
+                        </div>
+                    </div>
+                }
+
+                <!-- Sources Donut Chart -->
+                @if (chartSources) {
+                    <div class="bg-card rounded-2xl shadow overflow-hidden">
+                        <div class="p-6 pb-0">
+                            <div class="text-2xl font-semibold tracking-tight">Traffic Quellen</div>
+                            <div class="text-secondary font-medium">Sessions nach Quelle</div>
+                        </div>
+                        <div class="h-96 p-6 pt-4">
+                            <apx-chart
+                                [chart]="chartSources.chart"
+                                [colors]="chartSources.colors"
+                                [series]="chartSources.series"
+                                [labels]="chartSources.labels"
+                                [legend]="chartSources.legend"
+                                [dataLabels]="chartSources.dataLabels"
+                                [tooltip]="chartSources.tooltip"
+                                [plotOptions]="chartSources.plotOptions"></apx-chart>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Pages Table -->
+            <div class="w-full mb-8">
+                <div class="bg-card rounded-2xl shadow overflow-hidden">
+                    <div class="p-6 pb-4">
+                        <div class="text-2xl font-semibold tracking-tight">Alle Seiten</div>
+                        <div class="text-secondary font-medium">{{pageData.length}} Seiten im Bericht</div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-secondary uppercase tracking-wider">Seite</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-secondary uppercase tracking-wider">Sessions</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-secondary uppercase tracking-wider">Leads</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-secondary uppercase tracking-wider">Conv. Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (page of pageData; track page.id) {
+                                    <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+                                        <td class="px-6 py-4 text-sm font-medium">
+                                            @if (page.dimension_value === '(not set)') {
+                                                <span class="text-secondary italic">(nicht gesetzt)</span>
+                                            } @else if (page.dimension_value === '') {
+                                                <span class="text-secondary italic">(leer)</span>
+                                            } @else {
+                                                {{page.dimension_value}}
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-right font-semibold">{{page.sessions | number}}</td>
+                                        <td class="px-6 py-4 text-sm text-right">
+                                            @if (page.leads > 0) {
+                                                <span class="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-semibold px-2.5 py-1 rounded-full">
+                                                    {{page.leads}}
+                                                </span>
+                                            } @else {
+                                                <span class="text-secondary">0</span>
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-right">
+                                            @if (page.conversion_rate > 0) {
+                                                <span class="text-green-600 dark:text-green-400 font-semibold">{{page.conversion_rate}}%</span>
+                                            } @else {
+                                                <span class="text-secondary">0%</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sources Table -->
+            <div class="w-full">
+                <div class="bg-card rounded-2xl shadow overflow-hidden">
+                    <div class="p-6 pb-4">
+                        <div class="text-2xl font-semibold tracking-tight">Traffic Quellen</div>
+                        <div class="text-secondary font-medium">{{sourceData.length}} Quellen im Bericht</div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-secondary uppercase tracking-wider">Quelle</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-secondary uppercase tracking-wider">Sessions</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-secondary uppercase tracking-wider">Leads</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-secondary uppercase tracking-wider">Conv. Rate</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (source of sourceData; track source.id) {
+                                    <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+                                        <td class="px-6 py-4 text-sm font-medium">
+                                            @if (source.source === '(direct)') {
+                                                <span class="flex items-center gap-2">
+                                                    <mat-icon class="icon-size-4 text-blue-500" [svgIcon]="'heroicons_outline:globe-alt'"></mat-icon>
+                                                    Direkt
+                                                </span>
+                                            } @else if (source.source === '(not set)' || source.source === '(data not available)') {
+                                                <span class="text-secondary italic">{{source.source}}</span>
+                                            } @else {
+                                                {{source.source}}
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-right font-semibold">{{source.sessions | number}}</td>
+                                        <td class="px-6 py-4 text-sm text-right">
+                                            @if (source.leads > 0) {
+                                                <span class="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-semibold px-2.5 py-1 rounded-full">
+                                                    {{source.leads}}
+                                                </span>
+                                            } @else {
+                                                <span class="text-secondary">0</span>
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-right">
+                                            @if (source.conversion_rate > 0) {
+                                                <span class="text-green-600 dark:text-green-400 font-semibold">{{source.conversion_rate}}%</span>
+                                            } @else {
+                                                <span class="text-secondary">0%</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Winners & Losers -->
+            <div class="w-full mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- Top 5 Winners -->
+                <div class="bg-card rounded-2xl shadow overflow-hidden">
+                    <div class="p-6 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900">
+                                <mat-icon class="text-green-600 dark:text-green-400 icon-size-5" [svgIcon]="'heroicons_solid:arrow-trending-up'"></mat-icon>
+                            </div>
+                            <div>
+                                <div class="text-lg font-semibold tracking-tight">Top 5 Winners</div>
+                                <div class="text-secondary text-sm">Biggest ranking improvements</div>
+                            </div>
+                        </div>
+                    </div>
+                    @if (keywordsLoading) {
+                        <div class="flex items-center justify-center p-8">
+                            <mat-spinner diameter="24"></mat-spinner>
+                        </div>
+                    } @else if (keywordsError) {
+                        <div class="p-6 text-center text-secondary text-sm">{{ keywordsError }}</div>
+                    } @else if (topWinners.length === 0) {
+                        <div class="p-6 text-center text-secondary text-sm">Keine Gewinner gefunden</div>
+                    } @else {
+                        <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                            @for (kw of topWinners; track kw.id) {
+                                <div class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold truncate">{{ kw.keyword || '(kein Keyword)' }}</div>
+                                        <div class="text-xs text-secondary mt-0.5">
+                                            Position {{ kw.current_position }}
+                                            <span class="mx-1">&middot;</span>
+                                            Vol. {{ kw.search_volume_current | number }}
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3 ml-4">
+                                        <span class="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap">
+                                            &uarr; {{ kw.diff }} Pos.
+                                        </span>
+                                        <span class="text-green-600 text-xs font-semibold whitespace-nowrap">
+                                            +{{ kw.percent_change }}%
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Top 5 Losers -->
+                <div class="bg-card rounded-2xl shadow overflow-hidden">
+                    <div class="p-6 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900">
+                                <mat-icon class="text-red-600 dark:text-red-400 icon-size-5" [svgIcon]="'heroicons_solid:arrow-trending-down'"></mat-icon>
+                            </div>
+                            <div>
+                                <div class="text-lg font-semibold tracking-tight">Top 5 Losers</div>
+                                <div class="text-secondary text-sm">Biggest ranking drops</div>
+                            </div>
+                        </div>
+                    </div>
+                    @if (keywordsLoading) {
+                        <div class="flex items-center justify-center p-8">
+                            <mat-spinner diameter="24"></mat-spinner>
+                        </div>
+                    } @else if (keywordsError) {
+                        <div class="p-6 text-center text-secondary text-sm">{{ keywordsError }}</div>
+                    } @else if (topLosers.length === 0) {
+                        <div class="p-6 text-center text-secondary text-sm">Keine Verlierer gefunden</div>
+                    } @else {
+                        <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                            @for (kw of topLosers; track kw.id) {
+                                <div class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold truncate">{{ kw.keyword || '(kein Keyword)' }}</div>
+                                        <div class="text-xs text-secondary mt-0.5">
+                                            Position {{ kw.current_position }}
+                                            <span class="mx-1">&middot;</span>
+                                            Vol. {{ kw.search_volume_current | number }}
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3 ml-4">
+                                        <span class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap">
+                                            &darr; {{ kw.diff! * -1 }} Pos.
+                                        </span>
+                                        <span class="text-red-600 text-xs font-semibold whitespace-nowrap">
+                                            {{ kw.percent_change }}%
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+            </div>
+        }
+
+    </div>
+</div>

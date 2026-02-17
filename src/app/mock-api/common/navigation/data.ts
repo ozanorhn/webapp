@@ -1,39 +1,31 @@
 /* eslint-disable */
 import { FuseNavigationItem } from '@fuse/components/navigation';
 
-export const defaultNavigation: FuseNavigationItem[] = [
+const navigationItems: FuseNavigationItem[] = [
     {
-        id   : 'example',
-        title: 'Example',
+        id   : 'dashboard',
+        title: 'Dashboard',
         type : 'basic',
-        icon : 'heroicons_outline:chart-pie',
-        link : '/example'
+        icon : 'heroicons_outline:home',
+        link : '/dashboard'
+    },
+    {
+        id   : 'analytics',
+        title: 'Analytics',
+        type : 'basic',
+        icon : 'heroicons_outline:chart-bar-square',
+        link : '/analytics'
+    },
+    {
+        id   : 'sistrix',
+        title: 'Sistrix',
+        type : 'basic',
+        icon : 'heroicons_outline:magnifying-glass',
+        link : '/sistrix'
     }
 ];
-export const compactNavigation: FuseNavigationItem[] = [
-    {
-        id   : 'example',
-        title: 'Example',
-        type : 'basic',
-        icon : 'heroicons_outline:chart-pie',
-        link : '/example'
-    }
-];
-export const futuristicNavigation: FuseNavigationItem[] = [
-    {
-        id   : 'example',
-        title: 'Example',
-        type : 'basic',
-        icon : 'heroicons_outline:chart-pie',
-        link : '/example'
-    }
-];
-export const horizontalNavigation: FuseNavigationItem[] = [
-    {
-        id   : 'example',
-        title: 'Example',
-        type : 'basic',
-        icon : 'heroicons_outline:chart-pie',
-        link : '/example'
-    }
-];
+
+export const defaultNavigation: FuseNavigationItem[] = [...navigationItems];
+export const compactNavigation: FuseNavigationItem[] = [...navigationItems];
+export const futuristicNavigation: FuseNavigationItem[] = [...navigationItems];
+export const horizontalNavigation: FuseNavigationItem[] = [...navigationItems];

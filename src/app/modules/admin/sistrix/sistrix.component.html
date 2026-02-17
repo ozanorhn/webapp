@@ -1,0 +1,371 @@
+<div class="flex w-full flex-auto flex-col">
+    <div class="mx-auto flex w-full max-w-screen-xl flex-wrap p-6 md:p-8">
+
+        <!-- Header with Reload Button -->
+        <div class="w-full mb-8 flex items-center justify-between">
+            <div>
+                <div class="text-4xl font-bold tracking-tight">Sistrix</div>
+                <div class="text-secondary font-medium tracking-tight mt-2">
+                    @if (reportDate) {
+                        SEO Keyword Rankings &middot; Bericht vom {{reportDate}}
+                    } @else {
+                        SEO visibility, keyword rankings and competitor analysis
+                    }
+                </div>
+            </div>
+            <button mat-flat-button
+                    color="primary"
+                    (click)="loadData()"
+                    [disabled]="loading"
+                    class="flex items-center gap-2">
+                @if (loading) {
+                    <mat-spinner diameter="20"></mat-spinner>
+                } @else {
+                    <mat-icon [svgIcon]="'heroicons_outline:arrow-path'"></mat-icon>
+                }
+                Neu laden
+            </button>
+        </div>
+
+        <!-- Error Message -->
+        @if (error) {
+            <div class="w-full mb-8">
+                <div class="bg-red-100 dark:bg-red-900/30 border border-red-300 dark:border-red-700 rounded-2xl p-6 text-red-700 dark:text-red-300">
+                    <div class="flex items-center gap-3">
+                        <mat-icon class="text-red-500" [svgIcon]="'heroicons_outline:exclamation-triangle'"></mat-icon>
+                        <span class="font-medium">{{error}}</span>
+                    </div>
+                </div>
+            </div>
+        }
+
+        <!-- Loading State -->
+        @if (loading && !dataLoaded) {
+            <div class="w-full flex items-center justify-center py-20">
+                <mat-spinner diameter="48"></mat-spinner>
+            </div>
+        }
+
+        @if (dataLoaded) {
+
+            <!-- KPI Cards -->
+            <div class="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                <!-- Visibility Index -->
+                <div class="bg-card rounded-2xl shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-secondary text-sm font-medium">VISIBILITY INDEX</div>
+                            <div class="text-3xl font-bold mt-2">{{ownVisibility | number:'1.2-2'}}</div>
+                        </div>
+                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900">
+                            <mat-icon class="text-green-600 dark:text-green-400 icon-size-6" [svgIcon]="'heroicons_solid:eye'"></mat-icon>
+                        </div>
+                    </div>
+                    <div class="flex items-center mt-4">
+                        @if (ownVisibilityChange >= 0) {
+                            <span class="text-green-600 font-semibold text-sm">
+                                <mat-icon class="icon-size-4 inline mr-1" [svgIcon]="'heroicons_solid:arrow-trending-up'"></mat-icon>
+                                +{{ownVisibilityChange}}%
+                            </span>
+                        } @else {
+                            <span class="text-red-600 font-semibold text-sm">
+                                <mat-icon class="icon-size-4 inline mr-1" [svgIcon]="'heroicons_solid:arrow-trending-down'"></mat-icon>
+                                {{ownVisibilityChange}}%
+                            </span>
+                        }
+                        <span class="text-secondary text-xs ml-2">vs letzte Woche</span>
+                    </div>
+                </div>
+
+                <!-- Total Keywords -->
+                <div class="bg-card rounded-2xl shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-secondary text-sm font-medium">KEYWORDS GESAMT</div>
+                            <div class="text-3xl font-bold mt-2">{{totalKeywords}}</div>
+                        </div>
+                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900">
+                            <mat-icon class="text-blue-600 dark:text-blue-400 icon-size-6" [svgIcon]="'heroicons_solid:key'"></mat-icon>
+                        </div>
+                    </div>
+                    <div class="flex items-center mt-4 gap-3">
+                        <span class="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-semibold px-2 py-0.5 rounded-full">+{{newKeywords}} neu</span>
+                        <span class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs font-semibold px-2 py-0.5 rounded-full">{{lostKeywords}} verloren</span>
+                    </div>
+                </div>
+
+                <!-- Top 10 Keywords -->
+                <div class="bg-card rounded-2xl shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-secondary text-sm font-medium">TOP-10 KEYWORDS</div>
+                            <div class="text-3xl font-bold mt-2">{{top10Keywords}}</div>
+                        </div>
+                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-purple-100 dark:bg-purple-900">
+                            <mat-icon class="text-purple-600 dark:text-purple-400 icon-size-6" [svgIcon]="'heroicons_solid:trophy'"></mat-icon>
+                        </div>
+                    </div>
+                    <div class="flex items-center mt-4">
+                        <span class="text-secondary text-xs">von {{totalKeywords}} Keywords</span>
+                    </div>
+                </div>
+
+                <!-- Improved / Dropped -->
+                <div class="bg-card rounded-2xl shadow p-6">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <div class="text-secondary text-sm font-medium">VERBESSERT / VERSCHLECHTERT</div>
+                            <div class="flex items-center gap-3 mt-2">
+                                <span class="text-3xl font-bold text-green-600">{{improvedKeywords}}</span>
+                                <span class="text-xl text-secondary">/</span>
+                                <span class="text-3xl font-bold text-red-600">{{droppedKeywords}}</span>
+                            </div>
+                        </div>
+                        <div class="flex h-12 w-12 items-center justify-center rounded-lg bg-amber-100 dark:bg-amber-900">
+                            <mat-icon class="text-amber-600 dark:text-amber-400 icon-size-6" [svgIcon]="'heroicons_solid:arrows-up-down'"></mat-icon>
+                        </div>
+                    </div>
+                    <div class="flex items-center mt-4">
+                        <span class="text-secondary text-xs">Keyword-Bewegungen</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Visibility Index Chart -->
+            @if (chartVisibility) {
+                <div class="w-full mb-8">
+                    <div class="bg-card rounded-2xl shadow">
+                        <div class="p-6 pb-0">
+                            <div class="flex items-center justify-between">
+                                <div>
+                                    <div class="text-2xl font-semibold tracking-tight">Visibility Index History</div>
+                                    <div class="text-secondary font-medium">Sichtbarkeitsindex im Wettbewerbsvergleich</div>
+                                </div>
+                                <div class="text-3xl font-bold" [class.text-green-600]="ownVisibilityChange >= 0" [class.text-red-600]="ownVisibilityChange < 0">
+                                    {{ownVisibility | number:'1.2-2'}}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="p-6 pt-4">
+                            <apx-chart
+                                [chart]="chartVisibility.chart"
+                                [colors]="chartVisibility.colors"
+                                [dataLabels]="chartVisibility.dataLabels"
+                                [grid]="chartVisibility.grid"
+                                [series]="chartVisibility.series"
+                                [stroke]="chartVisibility.stroke"
+                                [markers]="chartVisibility.markers"
+                                [legend]="chartVisibility.legend"
+                                [tooltip]="chartVisibility.tooltip"
+                                [xaxis]="chartVisibility.xaxis"
+                                [yaxis]="chartVisibility.yaxis"></apx-chart>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- Competitor Comparison -->
+            @if (competitors.length > 0) {
+                <div class="w-full mb-8">
+                    <div class="mb-6">
+                        <div class="text-2xl font-semibold tracking-tight">Wettbewerbsvergleich</div>
+                        <div class="text-secondary font-medium">Sichtbarkeit im Vergleich zu Mitbewerbern</div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        @for (comp of competitors; track comp.domain) {
+                            <div class="bg-card rounded-2xl shadow p-6">
+                                <div class="flex items-center justify-between mb-4">
+                                    <div class="font-semibold truncate">{{comp.domain}}</div>
+                                    @if (comp.change > 0) {
+                                        <span class="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-semibold px-2.5 py-1 rounded-full">&uarr; {{comp.change}}%</span>
+                                    } @else if (comp.change < 0) {
+                                        <span class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs font-semibold px-2.5 py-1 rounded-full">&darr; {{comp.change * -1}}%</span>
+                                    } @else {
+                                        <span class="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-semibold px-2.5 py-1 rounded-full">&#8211; 0%</span>
+                                    }
+                                </div>
+                                <div class="space-y-3">
+                                    <div class="flex justify-between text-sm">
+                                        <span class="text-secondary">Sichtbarkeit</span>
+                                        <span class="font-semibold">{{comp.currentVisibility | number:'1.2-2'}}</span>
+                                    </div>
+                                    @if (comp.previousVisibility !== null) {
+                                        <div class="flex justify-between text-sm">
+                                            <span class="text-secondary">Vorwoche</span>
+                                            <span class="font-semibold text-secondary">{{comp.previousVisibility | number:'1.2-2'}}</span>
+                                        </div>
+                                    }
+                                </div>
+                                <div class="mt-4">
+                                    <div class="h-1.5 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                                        <div class="h-full bg-primary rounded-full" [style.width.%]="(comp.currentVisibility / ownVisibility) * 100"></div>
+                                    </div>
+                                    <div class="text-xs text-secondary mt-2">Relative Sichtbarkeit zu {{ownDomain}}</div>
+                                </div>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- Keyword Rankings Table -->
+            <div class="w-full mb-8">
+                <div class="bg-card rounded-2xl shadow overflow-hidden">
+                    <div class="p-6 pb-4">
+                        <div class="text-2xl font-semibold tracking-tight">Keyword Rankings</div>
+                        <div class="text-secondary font-medium">{{allKeywords.length}} Keywords im Ranking</div>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full">
+                            <thead>
+                                <tr class="border-b border-gray-200 dark:border-gray-700">
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-secondary uppercase tracking-wider">Keyword</th>
+                                    <th class="px-6 py-3 text-center text-xs font-semibold text-secondary uppercase tracking-wider">Position</th>
+                                    <th class="px-6 py-3 text-center text-xs font-semibold text-secondary uppercase tracking-wider">Vorher</th>
+                                    <th class="px-6 py-3 text-center text-xs font-semibold text-secondary uppercase tracking-wider">Veränderung</th>
+                                    <th class="px-6 py-3 text-right text-xs font-semibold text-secondary uppercase tracking-wider">Suchvolumen</th>
+                                    <th class="px-6 py-3 text-center text-xs font-semibold text-secondary uppercase tracking-wider">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @for (kw of allKeywords; track kw.id) {
+                                    <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+                                        <td class="px-6 py-4 text-sm font-semibold">{{kw.keyword}}</td>
+                                        <td class="px-6 py-4 text-sm text-center">
+                                            @if (kw.current_position <= 3) {
+                                                <span class="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-bold px-2.5 py-1 rounded-full">{{kw.current_position}}</span>
+                                            } @else if (kw.current_position <= 10) {
+                                                <span class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs font-bold px-2.5 py-1 rounded-full">{{kw.current_position}}</span>
+                                            } @else {
+                                                <span class="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-bold px-2.5 py-1 rounded-full">{{kw.current_position}}</span>
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-center text-secondary">
+                                            @if (kw.last_position !== null) {
+                                                {{kw.last_position}}
+                                            } @else {
+                                                -
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-center font-semibold">
+                                            @if (kw.diff !== null && kw.diff > 0) {
+                                                <span class="text-green-600">&uarr; {{kw.diff}}</span>
+                                            } @else if (kw.diff !== null && kw.diff < 0) {
+                                                <span class="text-red-600">&darr; {{kw.diff * -1}}</span>
+                                            } @else if (kw.diff === 0) {
+                                                <span class="text-secondary">-</span>
+                                            } @else {
+                                                <span class="text-blue-600">NEU</span>
+                                            }
+                                        </td>
+                                        <td class="px-6 py-4 text-sm text-right">{{kw.search_volume_current | number}}</td>
+                                        <td class="px-6 py-4 text-sm text-center">
+                                            @if (kw.status === 'improved') {
+                                                <span class="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-semibold px-2.5 py-1 rounded-full">Verbessert</span>
+                                            } @else if (kw.status === 'dropped') {
+                                                <span class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs font-semibold px-2.5 py-1 rounded-full">Verschlechtert</span>
+                                            } @else if (kw.status === 'new') {
+                                                <span class="bg-blue-100 dark:bg-blue-900 text-blue-700 dark:text-blue-300 text-xs font-semibold px-2.5 py-1 rounded-full">Neu</span>
+                                            } @else if (kw.status === 'same') {
+                                                <span class="bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-xs font-semibold px-2.5 py-1 rounded-full">Gleich</span>
+                                            }
+                                        </td>
+                                    </tr>
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Top Winners & Losers -->
+            <div class="w-full grid grid-cols-1 md:grid-cols-2 gap-6">
+
+                <!-- Top 5 Winners -->
+                <div class="bg-card rounded-2xl shadow overflow-hidden">
+                    <div class="p-6 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-green-100 dark:bg-green-900">
+                                <mat-icon class="text-green-600 dark:text-green-400 icon-size-5" [svgIcon]="'heroicons_solid:arrow-trending-up'"></mat-icon>
+                            </div>
+                            <div>
+                                <div class="text-lg font-semibold tracking-tight">Top 5 Winners</div>
+                                <div class="text-secondary text-sm">Grösste Ranking-Verbesserungen</div>
+                            </div>
+                        </div>
+                    </div>
+                    @if (topWinners.length === 0) {
+                        <div class="p-6 text-center text-secondary text-sm">Keine Gewinner gefunden</div>
+                    } @else {
+                        <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                            @for (kw of topWinners; track kw.id) {
+                                <div class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold truncate">{{ kw.keyword }}</div>
+                                        <div class="text-xs text-secondary mt-0.5">
+                                            Position {{ kw.current_position }}
+                                            <span class="mx-1">&middot;</span>
+                                            Vol. {{ kw.search_volume_current | number }}
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3 ml-4">
+                                        <span class="bg-green-100 dark:bg-green-900 text-green-700 dark:text-green-300 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap">
+                                            &uarr; {{ kw.diff }} Pos.
+                                        </span>
+                                        <span class="text-green-600 text-xs font-semibold whitespace-nowrap">
+                                            +{{ kw.percent_change }}%
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+                <!-- Top 5 Losers -->
+                <div class="bg-card rounded-2xl shadow overflow-hidden">
+                    <div class="p-6 pb-4">
+                        <div class="flex items-center gap-3">
+                            <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-red-100 dark:bg-red-900">
+                                <mat-icon class="text-red-600 dark:text-red-400 icon-size-5" [svgIcon]="'heroicons_solid:arrow-trending-down'"></mat-icon>
+                            </div>
+                            <div>
+                                <div class="text-lg font-semibold tracking-tight">Top 5 Losers</div>
+                                <div class="text-secondary text-sm">Grösste Ranking-Verluste</div>
+                            </div>
+                        </div>
+                    </div>
+                    @if (topLosers.length === 0) {
+                        <div class="p-6 text-center text-secondary text-sm">Keine Verlierer gefunden</div>
+                    } @else {
+                        <div class="divide-y divide-gray-100 dark:divide-gray-800">
+                            @for (kw of topLosers; track kw.id) {
+                                <div class="flex items-center justify-between px-6 py-4 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+                                    <div class="flex-1 min-w-0">
+                                        <div class="text-sm font-semibold truncate">{{ kw.keyword }}</div>
+                                        <div class="text-xs text-secondary mt-0.5">
+                                            Position {{ kw.current_position }}
+                                            <span class="mx-1">&middot;</span>
+                                            Vol. {{ kw.search_volume_current | number }}
+                                        </div>
+                                    </div>
+                                    <div class="flex items-center gap-3 ml-4">
+                                        <span class="bg-red-100 dark:bg-red-900 text-red-700 dark:text-red-300 text-xs font-bold px-2.5 py-1 rounded-full whitespace-nowrap">
+                                            &darr; {{ kw.diff * -1 }} Pos.
+                                        </span>
+                                        <span class="text-red-600 text-xs font-semibold whitespace-nowrap">
+                                            {{ kw.percent_change }}%
+                                        </span>
+                                    </div>
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+
+            </div>
+
+        }
+
+    </div>
+</div>
