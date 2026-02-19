@@ -1,0 +1,154 @@
+<div class="flex w-full flex-auto flex-col">
+    <div class="mx-auto flex w-full max-w-screen-xl flex-wrap p-6 md:p-8">
+
+        <!-- Header -->
+        <div class="w-full mb-8 flex items-center justify-between">
+            <div>
+                <div class="text-4xl font-bold tracking-tight">Geo AI Pack</div>
+                <div class="text-secondary font-medium tracking-tight mt-2">
+                    AI Visibility Tracking &ndash; Generative Engine Optimization (GEO)
+                </div>
+            </div>
+            <button mat-icon-button (click)="loadData()" [disabled]="loading">
+                <mat-icon [svgIcon]="'heroicons_outline:arrow-path'"></mat-icon>
+            </button>
+        </div>
+
+        <!-- Loading -->
+        @if (loading && !dataLoaded) {
+            <div class="flex w-full items-center justify-center py-20">
+                <mat-spinner [diameter]="48"></mat-spinner>
+            </div>
+        }
+
+        <!-- Error -->
+        @if (error) {
+            <div class="w-full mb-6 rounded-lg bg-red-100 dark:bg-red-900/30 p-4 text-red-700 dark:text-red-400">
+                {{ error }}
+            </div>
+        }
+
+        @if (dataLoaded) {
+            <!-- KPI Cards -->
+            <div class="w-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
+                @for (brand of brands; track brand.brand_name) {
+                    <div class="bg-card rounded-2xl shadow p-5">
+                        <div class="text-secondary text-xs font-semibold uppercase tracking-wider mb-2">{{ brand.brand_name }}</div>
+                        <div class="text-3xl font-bold">{{ brand.latestVisibility | number:'1.1-1' }}%</div>
+                        <div class="flex items-center gap-2 mt-2 text-sm">
+                            @if (brand.change > 0) {
+                                <span class="text-green-600 font-semibold">
+                                    <mat-icon class="icon-size-4 inline" [svgIcon]="'heroicons_solid:arrow-trending-up'"></mat-icon>
+                                    +{{ brand.change | number:'1.1-1' }}%
+                                </span>
+                            } @else if (brand.change < 0) {
+                                <span class="text-red-600 font-semibold">
+                                    <mat-icon class="icon-size-4 inline" [svgIcon]="'heroicons_solid:arrow-trending-down'"></mat-icon>
+                                    {{ brand.change | number:'1.1-1' }}%
+                                </span>
+                            } @else {
+                                <span class="text-secondary font-semibold">&ndash;</span>
+                            }
+                        </div>
+                        <div class="flex items-center gap-4 mt-3 text-xs text-secondary">
+                            @if (brand.latestPosition !== null) {
+                                <span>Pos: {{ brand.latestPosition | number:'1.1-1' }}</span>
+                            }
+                            @if (brand.latestSentiment !== null) {
+                                <span>Sent: {{ brand.latestSentiment }}</span>
+                            }
+                        </div>
+                    </div>
+                }
+            </div>
+
+            <!-- Visibility Chart -->
+            <div class="w-full mb-8">
+                <div class="bg-card rounded-2xl shadow overflow-hidden">
+                    <div class="p-6">
+                        <div class="flex items-center justify-between mb-6">
+                            <div>
+                                <div class="text-xl font-semibold">AI Visibility pro Brand</div>
+                                <div class="text-secondary text-sm mt-1">Tagesverlauf der Visibility in % &ndash; Stand: {{ reportDate }}</div>
+                            </div>
+                            <div class="flex items-center gap-2 text-xs text-secondary">
+                                <span>{{ totalBrands }} Brands</span>
+                            </div>
+                        </div>
+                        @if (chartVisibility) {
+                            <apx-chart
+                                [chart]="chartVisibility.chart"
+                                [colors]="chartVisibility.colors"
+                                [dataLabels]="chartVisibility.dataLabels"
+                                [fill]="chartVisibility.fill"
+                                [grid]="chartVisibility.grid"
+                                [legend]="chartVisibility.legend"
+                                [markers]="chartVisibility.markers"
+                                [series]="chartVisibility.series"
+                                [stroke]="chartVisibility.stroke"
+                                [tooltip]="chartVisibility.tooltip"
+                                [xaxis]="chartVisibility.xaxis"
+                                [yaxis]="chartVisibility.yaxis"
+                            ></apx-chart>
+                        }
+                    </div>
+                </div>
+            </div>
+
+            <!-- Brand Detail Table -->
+            <div class="w-full">
+                <div class="bg-card rounded-2xl shadow overflow-hidden">
+                    <div class="p-6">
+                        <div class="text-xl font-semibold mb-4">Brand-Details</div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th class="text-left py-3 px-4 text-secondary font-semibold">Brand</th>
+                                        <th class="text-right py-3 px-4 text-secondary font-semibold">Visibility</th>
+                                        <th class="text-right py-3 px-4 text-secondary font-semibold">Trend</th>
+                                        <th class="text-right py-3 px-4 text-secondary font-semibold">Avg. Position</th>
+                                        <th class="text-right py-3 px-4 text-secondary font-semibold">Sentiment</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (brand of brands; track brand.brand_name) {
+                                        <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
+                                            <td class="py-3 px-4 font-semibold">{{ brand.brand_name }}</td>
+                                            <td class="py-3 px-4 text-right font-semibold">{{ brand.latestVisibility | number:'1.1-1' }}%</td>
+                                            <td class="py-3 px-4 text-right">
+                                                @if (brand.change > 0) {
+                                                    <span class="text-green-600 font-semibold">+{{ brand.change | number:'1.1-1' }}%</span>
+                                                } @else if (brand.change < 0) {
+                                                    <span class="text-red-600 font-semibold">{{ brand.change | number:'1.1-1' }}%</span>
+                                                } @else {
+                                                    <span class="text-secondary">&ndash;</span>
+                                                }
+                                            </td>
+                                            <td class="py-3 px-4 text-right">
+                                                @if (brand.latestPosition !== null) {
+                                                    {{ brand.latestPosition | number:'1.1-1' }}
+                                                } @else {
+                                                    <span class="text-secondary">&ndash;</span>
+                                                }
+                                            </td>
+                                            <td class="py-3 px-4 text-right">
+                                                @if (brand.latestSentiment !== null) {
+                                                    <span [class]="brand.latestSentiment >= 60 ? 'text-green-600' : brand.latestSentiment >= 50 ? 'text-amber-600' : 'text-red-600'">
+                                                        {{ brand.latestSentiment }}
+                                                    </span>
+                                                } @else {
+                                                    <span class="text-secondary">&ndash;</span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+</div>

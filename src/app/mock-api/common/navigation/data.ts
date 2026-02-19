@@ -22,7 +22,16 @@ const navigationItems: FuseNavigationItem[] = [
         type : 'basic',
         icon : 'heroicons_outline:magnifying-glass',
         link : '/sistrix'
-    }
+    },
+
+     {
+        id   : 'GEO AI',
+        title: 'GEO AI',
+        type : 'basic',
+        icon : 'heroicons_outline:globe-alt',
+        link : '/geo-ai-pack'
+    },
+   
 ];
 
 export const defaultNavigation: FuseNavigationItem[] = [...navigationItems];

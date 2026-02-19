@@ -78,6 +78,7 @@ export const appRoutes: Route[] = [
             {path: 'dashboard', loadChildren: () => import('app/modules/admin/dashboard/dashboard.routes')},
             {path: 'analytics', loadChildren: () => import('app/modules/admin/analytics/analytics.routes')},
             {path: 'sistrix', loadChildren: () => import('app/modules/admin/sistrix/sistrix.routes')},
+            {path: 'geo-ai-pack', loadChildren: () => import('app/modules/admin/geo-ai-pack/geo-ai-pack.routes')},
         ]
     }
 ];
