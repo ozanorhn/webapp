@@ -1,144 +1,398 @@
 <div class="flex w-full flex-auto flex-col">
-    <div class="mx-auto flex w-full max-w-screen-xl flex-wrap p-6 md:p-8">
+    <div class="mx-auto flex w-full max-w-screen-xl flex-col p-6 md:p-8">
 
-        <!-- Header -->
-        <div class="w-full mb-8 flex items-center justify-between">
+        <!-- ===== HEADER ===== -->
+        <div class="mb-8 flex w-full items-start justify-between">
             <div>
-                <div class="text-4xl font-bold tracking-tight">Geo AI Pack</div>
-                <div class="text-secondary font-medium tracking-tight mt-2">
-                    AI Visibility Tracking &ndash; Generative Engine Optimization (GEO)
+                <div class="text-3xl font-extrabold tracking-tight md:text-4xl">GEO AI Dashboard</div>
+                <div class="text-secondary mt-1 text-sm">
+                    Wie sichtbar sind deine Brands in ChatGPT, Perplexity &amp; Google AI?
                 </div>
             </div>
-            <button mat-icon-button (click)="loadData()" [disabled]="loading">
-                <mat-icon [svgIcon]="'heroicons_outline:arrow-path'"></mat-icon>
-            </button>
+            <div class="flex items-center gap-3">
+                <!-- Brand Filter -->
+                <mat-form-field appearance="outline" class="min-w-36" subscriptSizing="dynamic">
+                    <mat-label>Brand</mat-label>
+                    <mat-select [value]="selectedBrand()" (selectionChange)="onBrandChange($event.value)">
+                        @for (brand of availableBrands(); track brand) {
+                            <mat-option [value]="brand">
+                                {{ brand === 'all' ? 'Alle Brands' : brand }}
+                            </mat-option>
+                        }
+                    </mat-select>
+                </mat-form-field>
+                <button mat-icon-button (click)="loadData()" [disabled]="loading()" class="text-secondary">
+                    @if (loading()) {
+                        <mat-spinner diameter="20"></mat-spinner>
+                    } @else {
+                        <mat-icon [svgIcon]="'heroicons_outline:arrow-path'"></mat-icon>
+                    }
+                </button>
+            </div>
         </div>
 
         <!-- Loading -->
-        @if (loading && !dataLoaded) {
+        @if (loading() && !dataLoaded()) {
             <div class="flex w-full items-center justify-center py-20">
                 <mat-spinner [diameter]="48"></mat-spinner>
             </div>
         }
 
         <!-- Error -->
-        @if (error) {
-            <div class="w-full mb-6 rounded-lg bg-red-100 dark:bg-red-900/30 p-4 text-red-700 dark:text-red-400">
-                {{ error }}
+        @if (error()) {
+            <div class="mb-6 rounded-xl bg-red-50 p-4 text-sm text-red-700 dark:bg-red-900/20 dark:text-red-300">
+                {{ error() }}
             </div>
         }
 
-        @if (dataLoaded) {
-            <!-- KPI Cards -->
-            <div class="w-full grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4 mb-8">
-                @for (brand of brands; track brand.brand_name) {
-                    <div class="bg-card rounded-2xl shadow p-5">
-                        <div class="text-secondary text-xs font-semibold uppercase tracking-wider mb-2">{{ brand.brand_name }}</div>
-                        <div class="text-3xl font-bold">{{ brand.latestVisibility | number:'1.1-1' }}%</div>
-                        <div class="flex items-center gap-2 mt-2 text-sm">
-                            @if (brand.change > 0) {
-                                <span class="text-green-600 font-semibold">
-                                    <mat-icon class="icon-size-4 inline" [svgIcon]="'heroicons_solid:arrow-trending-up'"></mat-icon>
-                                    +{{ brand.change | number:'1.1-1' }}%
-                                </span>
-                            } @else if (brand.change < 0) {
-                                <span class="text-red-600 font-semibold">
-                                    <mat-icon class="icon-size-4 inline" [svgIcon]="'heroicons_solid:arrow-trending-down'"></mat-icon>
-                                    {{ brand.change | number:'1.1-1' }}%
-                                </span>
-                            } @else {
-                                <span class="text-secondary font-semibold">&ndash;</span>
+        @if (dataLoaded()) {
+
+            <!-- ===== 1. BRAND OVERVIEW ===== -->
+            <div class="mb-8">
+                <div class="mb-4 text-lg font-bold">Brand-Sichtbarkeit</div>
+                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+                    @for (brand of brandCards(); track brand.id) {
+                        <div class="group relative overflow-hidden rounded-2xl bg-card p-5 shadow transition-shadow hover:shadow-lg">
+                            <!-- Brand Name + Domain -->
+                            <div class="mb-3">
+                                <div class="text-base font-bold">{{ brand.name }}</div>
+                                <div class="text-xs text-secondary">{{ brand.domain }}</div>
+                            </div>
+                            <!-- Visibility % -->
+                            <div class="text-3xl font-extrabold tabular-nums"
+                                 [class]="brand.visibility > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-secondary'">
+                                {{ brand.visibility | number:'1.1-1' }}%
+                            </div>
+                            <!-- Trend -->
+                            <div class="mt-1 flex items-center gap-1 text-sm">
+                                @if (brand.change > 0) {
+                                    <mat-icon class="icon-size-4 text-green-500" [svgIcon]="'heroicons_solid:arrow-trending-up'"></mat-icon>
+                                    <span class="font-semibold text-green-600">+{{ brand.change | number:'1.1-1' }}%</span>
+                                } @else if (brand.change < 0) {
+                                    <mat-icon class="icon-size-4 text-red-500" [svgIcon]="'heroicons_solid:arrow-trending-down'"></mat-icon>
+                                    <span class="font-semibold text-red-600">{{ brand.change | number:'1.1-1' }}%</span>
+                                } @else {
+                                    <span class="text-xs text-secondary">Noch keine Trenddaten</span>
+                                }
+                            </div>
+                            <!-- Erwähnungen -->
+                            @if (brand.mentions !== null && brand.mentions > 0) {
+                                <div class="mt-2 text-xs text-secondary">
+                                    Ø {{ brand.mentions | number:'1.1-1' }} Erwähnungen pro Antwort
+                                </div>
                             }
+                            <!-- Color Bar Top -->
+                            <div class="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r"
+                                 [class]="brand.visibility >= 30 ? 'from-emerald-400 to-emerald-600' : brand.visibility >= 10 ? 'from-amber-400 to-amber-600' : 'from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700'">
+                            </div>
                         </div>
-                        <div class="flex items-center gap-4 mt-3 text-xs text-secondary">
-                            @if (brand.latestPosition !== null) {
-                                <span>Pos: {{ brand.latestPosition | number:'1.1-1' }}</span>
-                            }
-                            @if (brand.latestSentiment !== null) {
-                                <span>Sent: {{ brand.latestSentiment }}</span>
-                            }
+                    }
+                </div>
+            </div>
+
+            <!-- ===== 2. KPI ROW ===== -->
+            <div class="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
+                <div class="rounded-2xl bg-card p-4 shadow">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-secondary">Brands getrackt</div>
+                    <div class="mt-1 text-2xl font-bold">{{ totalBrands() }}</div>
+                </div>
+                <div class="rounded-2xl bg-card p-4 shadow">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-secondary">AI-Antworten analysiert</div>
+                    <div class="mt-1 text-2xl font-bold">{{ totalConversations() }}</div>
+                    <div class="mt-0.5 flex gap-2 text-xs text-secondary">
+                        @for (m of conversationsByModel(); track m.model) {
+                            <span>{{ getModelLabel(m.model) }}: {{ m.count }}</span>
+                        }
+                    </div>
+                </div>
+                <div class="rounded-2xl bg-card p-4 shadow">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-secondary">Prompts beobachtet</div>
+                    <div class="mt-1 text-2xl font-bold">{{ totalPrompts() }}</div>
+                </div>
+                <div class="rounded-2xl bg-card p-4 shadow">
+                    <div class="text-xs font-semibold uppercase tracking-wider text-secondary">Ø Quellen pro Antwort</div>
+                    <div class="mt-1 text-2xl font-bold">{{ avgSourcesPerConv() }}</div>
+                </div>
+            </div>
+
+            <!-- ===== 3. VISIBILITY CHART ===== -->
+            @if (visibilityChartSeries().length > 0) {
+                <div class="mb-8 overflow-hidden rounded-2xl bg-card shadow">
+                    <div class="p-6">
+                        <div class="mb-1 text-lg font-bold">Sichtbarkeit im Zeitverlauf</div>
+                        <div class="mb-4 text-sm text-secondary">
+                            In wie viel % der AI-Antworten wird eine Brand erwähnt?
                         </div>
+                        <div style="min-height: 380px;">
+                            <apx-chart
+                                [chart]="chartVisibilityConfig().chart"
+                                [colors]="chartVisibilityConfig().colors"
+                                [series]="chartVisibilityConfig().series"
+                                [fill]="chartVisibilityConfig().fill"
+                                [stroke]="chartVisibilityConfig().stroke"
+                                [grid]="chartVisibilityConfig().grid"
+                                [legend]="chartVisibilityConfig().legend"
+                                [tooltip]="chartVisibilityConfig().tooltip"
+                                [xaxis]="chartVisibilityConfig().xaxis"
+                                [yaxis]="chartVisibilityConfig().yaxis"
+                                [markers]="chartVisibilityConfig().markers"
+                                [dataLabels]="chartVisibilityConfig().dataLabels">
+                            </apx-chart>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- ===== 4. AI CONVERSATIONS ===== -->
+            <div class="mb-8">
+                <div class="mb-4 flex items-center justify-between">
+                    <div>
+                        <div class="text-lg font-bold">AI-Antworten</div>
+                        <div class="text-sm text-secondary">Was sagen ChatGPT, Perplexity &amp; Google AI zu deinen Themen?</div>
+                    </div>
+                    <span class="text-sm text-secondary">{{ filteredConversations().length }} Antworten</span>
+                </div>
+
+                <!-- Search -->
+                <mat-form-field appearance="outline" class="mb-4 w-full" subscriptSizing="dynamic">
+                    <mat-icon matPrefix [svgIcon]="'heroicons_outline:magnifying-glass'" class="mr-2"></mat-icon>
+                    <input matInput
+                           [value]="conversationSearch()"
+                           (input)="conversationSearch.set($any($event.target).value)"
+                           placeholder="Suche in Fragen & Antworten...">
+                </mat-form-field>
+
+                <!-- Conversation Cards -->
+                <div class="space-y-4">
+                    @for (conv of visibleConversations(); track conv.chat_id) {
+                        <div class="overflow-hidden rounded-2xl bg-card shadow">
+                            <!-- Top Bar: Model + Date + Counts -->
+                            <div class="flex items-center justify-between px-5 py-3">
+                                <div class="flex items-center gap-3">
+                                    <span class="rounded-lg px-2.5 py-1 text-xs font-bold"
+                                          [class]="getModelColor(conv.model_id)">
+                                        {{ getModelLabel(conv.model_id) }}
+                                    </span>
+                                    <span class="text-xs text-secondary">{{ conv.created_at | date:'dd.MM.yyyy' }}</span>
+                                </div>
+                                <div class="flex items-center gap-3 text-xs text-secondary">
+                                    @if (conv.sources_count) {
+                                        <span class="flex items-center gap-1">
+                                            <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:link'"></mat-icon>
+                                            {{ conv.sources_count }} Quellen
+                                        </span>
+                                    }
+                                    @if (conv.brands_count) {
+                                        <span class="flex items-center gap-1">
+                                            <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:building-office'"></mat-icon>
+                                            {{ conv.brands_count }} Brands
+                                        </span>
+                                    }
+                                </div>
+                            </div>
+
+                            <!-- User Question -->
+                            <div class="border-t border-gray-100 px-5 py-4 dark:border-gray-800">
+                                <div class="text-sm font-semibold leading-relaxed">
+                                    {{ conv.user_message }}
+                                </div>
+                            </div>
+
+                            <!-- Assistant Answer (collapsed / expanded) -->
+                            <div class="border-t border-gray-50 bg-gray-50/50 px-5 py-4 dark:border-gray-800 dark:bg-gray-800/30">
+                                @if (isExpanded(conv.chat_id)) {
+                                    <div class="whitespace-pre-line text-sm leading-relaxed text-secondary">{{ conv.assistant_message }}</div>
+                                } @else {
+                                    <div class="line-clamp-2 text-sm leading-relaxed text-secondary">{{ conv.assistant_message }}</div>
+                                }
+
+                                <!-- Expand/Collapse Button -->
+                                <button class="mt-3 flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                                        (click)="toggleConversation(conv.chat_id)">
+                                    @if (isExpanded(conv.chat_id)) {
+                                        <mat-icon class="icon-size-4" [svgIcon]="'heroicons_outline:chevron-up'"></mat-icon>
+                                        Antwort einklappen
+                                    } @else {
+                                        <mat-icon class="icon-size-4" [svgIcon]="'heroicons_outline:chevron-down'"></mat-icon>
+                                        Komplette Antwort lesen
+                                    }
+                                </button>
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <!-- Show More Button -->
+                @if (filteredConversations().length > 10 && !showAllConversations()) {
+                    <div class="mt-4 text-center">
+                        <button mat-stroked-button (click)="showAllConversations.set(true)">
+                            Alle {{ filteredConversations().length }} Antworten anzeigen
+                        </button>
                     </div>
                 }
             </div>
 
-            <!-- Visibility Chart -->
-            <div class="w-full mb-8">
-                <div class="bg-card rounded-2xl shadow overflow-hidden">
+            <!-- ===== 5. EXTRAHIERTE URLS ===== -->
+            @if (extractedUrlsFromConversations().length > 0) {
+                <div class="mb-8 overflow-hidden rounded-2xl bg-card shadow">
                     <div class="p-6">
-                        <div class="flex items-center justify-between mb-6">
-                            <div>
-                                <div class="text-xl font-semibold">AI Visibility pro Brand</div>
-                                <div class="text-secondary text-sm mt-1">Tagesverlauf der Visibility in % &ndash; Stand: {{ reportDate }}</div>
-                            </div>
-                            <div class="flex items-center gap-2 text-xs text-secondary">
-                                <span>{{ totalBrands }} Brands</span>
-                            </div>
+                        <div class="mb-1 text-lg font-bold">Wo wirst du verlinkt?</div>
+                        <div class="mb-4 text-sm text-secondary">
+                            Diese URLs wurden in AI-Antworten gefunden
                         </div>
-                        @if (chartVisibility) {
-                            <apx-chart
-                                [chart]="chartVisibility.chart"
-                                [colors]="chartVisibility.colors"
-                                [dataLabels]="chartVisibility.dataLabels"
-                                [fill]="chartVisibility.fill"
-                                [grid]="chartVisibility.grid"
-                                [legend]="chartVisibility.legend"
-                                [markers]="chartVisibility.markers"
-                                [series]="chartVisibility.series"
-                                [stroke]="chartVisibility.stroke"
-                                [tooltip]="chartVisibility.tooltip"
-                                [xaxis]="chartVisibility.xaxis"
-                                [yaxis]="chartVisibility.yaxis"
-                            ></apx-chart>
-                        }
+
+                        <div class="space-y-2">
+                            @for (url of extractedUrlsFromConversations(); track url.url; let i = $index) {
+                                <div class="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800/50">
+                                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                                        {{ i + 1 }}
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <a [href]="url.url" target="_blank"
+                                           class="block truncate text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                                            {{ url.url }}
+                                        </a>
+                                        <div class="text-xs text-secondary">{{ url.domain }}</div>
+                                    </div>
+                                    @if (url.count && url.count > 1) {
+                                        <span class="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+                                            {{ url.count }}x erwähnt
+                                        </span>
+                                    }
+                                </div>
+                            }
+                        </div>
                     </div>
                 </div>
-            </div>
+            }
 
-            <!-- Brand Detail Table -->
-            <div class="w-full">
-                <div class="bg-card rounded-2xl shadow overflow-hidden">
+            <!-- ===== 6. AI URLs (from Supabase) ===== -->
+            @if (filteredAiUrls().length > 0) {
+                <div class="mb-8 overflow-hidden rounded-2xl bg-card shadow">
                     <div class="p-6">
-                        <div class="text-xl font-semibold mb-4">Brand-Details</div>
+                        <div class="mb-1 text-lg font-bold">Top AI-referenzierte URLs</div>
+                        <div class="mb-4 text-sm text-secondary">
+                            URLs aus der ai_visibility_urls Tabelle
+                        </div>
+
+                        <div class="space-y-2">
+                            @for (url of filteredAiUrls(); track url.id; let i = $index) {
+                                <div class="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800/50">
+                                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                                        {{ i + 1 }}
+                                    </div>
+                                    <div class="min-w-0 flex-1">
+                                        <a [href]="url.url" target="_blank"
+                                           class="block truncate text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                                            {{ url.url }}
+                                        </a>
+                                        <div class="text-xs text-secondary">{{ url.domain }}</div>
+                                    </div>
+                                    @if (url.classification) {
+                                        <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold"
+                                              [class]="getClassificationClass(url.classification)">
+                                            {{ url.classification }}
+                                        </span>
+                                    }
+                                    @if (url.mention_count) {
+                                        <span class="shrink-0 text-sm font-bold">{{ url.mention_count }}x</span>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- ===== 7. LLM DOMAIN USAGE ===== -->
+            @if (llmDomainRows().length > 0) {
+                <div class="mb-8 overflow-hidden rounded-2xl bg-card shadow">
+                    <div class="p-6">
+                        <div class="mb-1 text-lg font-bold">Domain-Zitierungen nach LLM</div>
+                        <div class="mb-4 text-sm text-secondary">
+                            Welche Domains werden von welchem LLM-Modell zitiert?
+                        </div>
+
                         <div class="overflow-x-auto">
                             <table class="w-full text-sm">
                                 <thead>
                                     <tr class="border-b border-gray-200 dark:border-gray-700">
-                                        <th class="text-left py-3 px-4 text-secondary font-semibold">Brand</th>
-                                        <th class="text-right py-3 px-4 text-secondary font-semibold">Visibility</th>
-                                        <th class="text-right py-3 px-4 text-secondary font-semibold">Trend</th>
-                                        <th class="text-right py-3 px-4 text-secondary font-semibold">Avg. Position</th>
-                                        <th class="text-right py-3 px-4 text-secondary font-semibold">Sentiment</th>
+                                        <th class="px-4 py-3 text-left font-semibold text-secondary">Domain</th>
+                                        <th class="px-4 py-3 text-right font-semibold text-secondary">Gesamt</th>
+                                        @for (model of ['ChatGPT', 'Perplexity', 'Google AI']; track model) {
+                                            <th class="px-4 py-3 text-right font-semibold text-secondary">{{ model }}</th>
+                                        }
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    @for (brand of brands; track brand.brand_name) {
-                                        <tr class="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition">
-                                            <td class="py-3 px-4 font-semibold">{{ brand.brand_name }}</td>
-                                            <td class="py-3 px-4 text-right font-semibold">{{ brand.latestVisibility | number:'1.1-1' }}%</td>
-                                            <td class="py-3 px-4 text-right">
-                                                @if (brand.change > 0) {
-                                                    <span class="text-green-600 font-semibold">+{{ brand.change | number:'1.1-1' }}%</span>
-                                                } @else if (brand.change < 0) {
-                                                    <span class="text-red-600 font-semibold">{{ brand.change | number:'1.1-1' }}%</span>
+                                    @for (row of llmDomainRows(); track row.domain) {
+                                        <tr class="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
+                                            <td class="px-4 py-3 font-medium">{{ row.domain }}</td>
+                                            <td class="px-4 py-3 text-right font-bold">{{ row.totalCitations }}</td>
+                                            @for (model of ['ChatGPT', 'Perplexity', 'Google AI']; track model) {
+                                                <td class="px-4 py-3 text-right">
+                                                    {{ getModelCount(row, model) ?? '–' }}
+                                                </td>
+                                            }
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            }
+
+            <!-- ===== 8. PROMPTS ===== -->
+            @if (totalPrompts() > 0) {
+                <div class="mb-8">
+                    <div class="mb-4 flex items-center justify-between">
+                        <div>
+                            <div class="text-lg font-bold">Beobachtete Prompts</div>
+                            <div class="text-sm text-secondary">
+                                Welche Suchanfragen werden in AI-Suchmaschinen gestellt?
+                            </div>
+                        </div>
+                        <span class="text-sm text-secondary">
+                            {{ filteredPrompts().length }} von {{ totalPrompts() }}
+                        </span>
+                    </div>
+
+                    <!-- Search -->
+                    <mat-form-field appearance="outline" class="mb-4 w-full" subscriptSizing="dynamic">
+                        <mat-icon matPrefix [svgIcon]="'heroicons_outline:magnifying-glass'" class="mr-2"></mat-icon>
+                        <input matInput
+                               [value]="promptSearchTerm()"
+                               (input)="promptSearchTerm.set($any($event.target).value)"
+                               placeholder="Prompts durchsuchen...">
+                    </mat-form-field>
+
+                    <div class="overflow-hidden rounded-2xl bg-card shadow">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th class="px-4 py-3 text-left font-semibold text-secondary">Prompt</th>
+                                        <th class="w-24 px-4 py-3 text-right font-semibold text-secondary">Volume</th>
+                                        <th class="w-20 px-4 py-3 text-center font-semibold text-secondary">Land</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (prompt of visiblePrompts(); track prompt.id) {
+                                        <tr class="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
+                                            <td class="px-4 py-3">{{ prompt.text }}</td>
+                                            <td class="px-4 py-3 text-right font-semibold tabular-nums">
+                                                @if (prompt.volume) {
+                                                    {{ prompt.volume | number }}
                                                 } @else {
-                                                    <span class="text-secondary">&ndash;</span>
+                                                    <span class="text-secondary">–</span>
                                                 }
                                             </td>
-                                            <td class="py-3 px-4 text-right">
-                                                @if (brand.latestPosition !== null) {
-                                                    {{ brand.latestPosition | number:'1.1-1' }}
-                                                } @else {
-                                                    <span class="text-secondary">&ndash;</span>
-                                                }
-                                            </td>
-                                            <td class="py-3 px-4 text-right">
-                                                @if (brand.latestSentiment !== null) {
-                                                    <span [class]="brand.latestSentiment >= 60 ? 'text-green-600' : brand.latestSentiment >= 50 ? 'text-amber-600' : 'text-red-600'">
-                                                        {{ brand.latestSentiment }}
+                                            <td class="px-4 py-3 text-center">
+                                                @if (prompt.country) {
+                                                    <span class="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium dark:bg-gray-800">
+                                                        {{ prompt.country }}
                                                     </span>
-                                                } @else {
-                                                    <span class="text-secondary">&ndash;</span>
                                                 }
                                             </td>
                                         </tr>
@@ -147,8 +401,19 @@
                             </table>
                         </div>
                     </div>
+
+                    <!-- Show More -->
+                    @if (filteredPrompts().length > 20 && !showAllPrompts()) {
+                        <div class="mt-4 text-center">
+                            <button mat-stroked-button (click)="showAllPrompts.set(true)">
+                                Alle {{ filteredPrompts().length }} Prompts anzeigen
+                            </button>
+                        </div>
+                    }
                 </div>
-            </div>
+            }
+
         }
+
     </div>
 </div>
