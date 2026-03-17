@@ -2,17 +2,22 @@
     <div class="mx-auto flex w-full max-w-screen-xl flex-col p-6 md:p-8">
 
         <!-- ===== HEADER ===== -->
-        <div class="mb-8 flex w-full items-start justify-between">
+        <div class="mb-6 flex w-full flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
                 <div class="text-3xl font-extrabold tracking-tight md:text-4xl">GEO AI Dashboard</div>
                 <div class="text-secondary mt-1 text-sm">
-                    Wie sichtbar sind deine Brands in ChatGPT, Perplexity &amp; Google AI?
+                    Wie sichtbar ist
+                    @if (ownBrandName()) {
+                        <span class="font-bold text-emerald-600 dark:text-emerald-400">{{ ownBrandName() }}</span>
+                    } @else {
+                        deine Brand
+                    }
+                    in {{ activeModelLabels() }}?
                 </div>
             </div>
-            <div class="flex items-center gap-3">
+            <div class="flex items-center gap-2">
                 <!-- Brand Filter -->
                 <mat-form-field appearance="outline" class="min-w-36" subscriptSizing="dynamic">
-                    <mat-label>Brand</mat-label>
                     <mat-select [value]="selectedBrand()" (selectionChange)="onBrandChange($event.value)">
                         @for (brand of availableBrands(); track brand) {
                             <mat-option [value]="brand">
@@ -21,7 +26,12 @@
                         }
                     </mat-select>
                 </mat-form-field>
-                <button mat-icon-button (click)="loadData()" [disabled]="loading()" class="text-secondary">
+                <button mat-icon-button (click)="exportPdf()" class="text-secondary"
+                        matTooltip="Als PDF herunterladen">
+                    <mat-icon [svgIcon]="'heroicons_outline:arrow-down-tray'"></mat-icon>
+                </button>
+                <button mat-icon-button (click)="loadData()" [disabled]="loading()" class="text-secondary"
+                        matTooltip="Daten neu laden">
                     @if (loading()) {
                         <mat-spinner diameter="20"></mat-spinner>
                     } @else {
@@ -47,83 +57,121 @@
 
         @if (dataLoaded()) {
 
-            <!-- ===== 1. BRAND OVERVIEW ===== -->
-            <div class="mb-8">
-                <div class="mb-4 text-lg font-bold">Brand-Sichtbarkeit</div>
-                <div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-                    @for (brand of brandCards(); track brand.id) {
-                        <div class="group relative overflow-hidden rounded-2xl bg-card p-5 shadow transition-shadow hover:shadow-lg">
-                            <!-- Brand Name + Domain -->
-                            <div class="mb-3">
-                                <div class="text-base font-bold">{{ brand.name }}</div>
-                                <div class="text-xs text-secondary">{{ brand.domain }}</div>
-                            </div>
-                            <!-- Visibility % -->
-                            <div class="text-3xl font-extrabold tabular-nums"
-                                 [class]="brand.visibility > 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-secondary'">
-                                {{ brand.visibility | number:'1.1-1' }}%
-                            </div>
-                            <!-- Trend -->
-                            <div class="mt-1 flex items-center gap-1 text-sm">
-                                @if (brand.change > 0) {
-                                    <mat-icon class="icon-size-4 text-green-500" [svgIcon]="'heroicons_solid:arrow-trending-up'"></mat-icon>
-                                    <span class="font-semibold text-green-600">+{{ brand.change | number:'1.1-1' }}%</span>
-                                } @else if (brand.change < 0) {
-                                    <mat-icon class="icon-size-4 text-red-500" [svgIcon]="'heroicons_solid:arrow-trending-down'"></mat-icon>
-                                    <span class="font-semibold text-red-600">{{ brand.change | number:'1.1-1' }}%</span>
-                                } @else {
-                                    <span class="text-xs text-secondary">Noch keine Trenddaten</span>
+            <!-- ===== 1. HERO: EIGENE BRAND ===== -->
+            @if (ownBrandSummary(); as own) {
+                <div class="mb-6 overflow-hidden rounded-2xl border-2 border-emerald-400/30 bg-gradient-to-r from-emerald-50 to-teal-50 shadow-lg dark:from-emerald-950/30 dark:to-teal-950/20 dark:border-emerald-500/20">
+                    <div class="p-6">
+                        <div class="flex flex-col gap-6 sm:flex-row sm:items-center sm:justify-between">
+                            <!-- Left: Brand Info -->
+                            <div>
+                                <div class="mb-1 flex items-center gap-2">
+                                    <span class="rounded-full bg-emerald-500 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white">Deine Brand</span>
+                                </div>
+                                <div class="text-2xl font-extrabold text-gray-900 dark:text-white">{{ own.brand_name }}</div>
+                                @if (ownBrand(); as ob) {
+                                    <div class="mt-0.5 text-sm text-secondary">{{ ob.domains }}</div>
                                 }
                             </div>
-                            <!-- Erwähnungen -->
-                            @if (brand.mentions !== null && brand.mentions > 0) {
-                                <div class="mt-2 text-xs text-secondary">
-                                    Ø {{ brand.mentions | number:'1.1-1' }} Erwähnungen pro Antwort
+
+                            <!-- Right: Key Metrics -->
+                            <div class="flex items-center gap-8">
+                                <!-- Visibility -->
+                                <div class="text-center">
+                                    <div class="text-xs font-semibold uppercase tracking-wider text-secondary">Sichtbarkeit</div>
+                                    <div class="mt-1 text-4xl font-black tabular-nums text-emerald-600 dark:text-emerald-400">
+                                        {{ own.latestVisibility | number:'1.1-1' }}%
+                                    </div>
+                                    @if (own.change !== 0) {
+                                        <div class="mt-0.5 flex items-center justify-center gap-0.5 text-sm font-semibold"
+                                             [class]="own.change > 0 ? 'text-green-600' : 'text-red-500'">
+                                            <mat-icon class="icon-size-4"
+                                                      [svgIcon]="own.change > 0 ? 'heroicons_solid:arrow-trending-up' : 'heroicons_solid:arrow-trending-down'">
+                                            </mat-icon>
+                                            {{ own.change > 0 ? '+' : '' }}{{ own.change | number:'1.1-1' }}% vs. Vorwoche
+                                        </div>
+                                    }
+                                    <div class="mt-1 text-[10px] leading-tight text-secondary max-w-[140px]">Anteil der Chats mit Markenerwähnung – Vergleich zur Vorwoche</div>
                                 </div>
-                            }
-                            <!-- Color Bar Top -->
-                            <div class="absolute left-0 right-0 top-0 h-1 bg-gradient-to-r"
-                                 [class]="brand.visibility >= 30 ? 'from-emerald-400 to-emerald-600' : brand.visibility >= 10 ? 'from-amber-400 to-amber-600' : 'from-gray-300 to-gray-400 dark:from-gray-600 dark:to-gray-700'">
+                                <!-- Beobachtete Prompts -->
+                                <div class="text-center">
+                                    <div class="text-xs font-semibold uppercase tracking-wider text-secondary">Beobachtete Prompts</div>
+                                    <div class="mt-1 text-4xl font-black tabular-nums">{{ totalPrompts() }}</div>
+                                </div>
+                                <!-- Sentiment -->
+                                @if (own.latestSentiment !== null) {
+                                    <div class="text-center">
+                                        <div class="text-xs font-semibold uppercase tracking-wider text-secondary">Sentiment</div>
+                                        <div class="mt-1 text-4xl font-black tabular-nums">{{ own.latestSentiment | number:'1.0-0' }}</div>
+                                    </div>
+                                }
+                                <!-- Position -->
+                                @if (own.latestPosition !== null) {
+                                    <div class="text-center">
+                                        <div class="text-xs font-semibold uppercase tracking-wider text-secondary">Erwähnungen</div>
+                                        <div class="mt-1 text-4xl font-black tabular-nums">{{ own.latestPosition | number:'1.1-1' }}</div>
+                                    </div>
+                                }
                             </div>
                         </div>
-                    }
+                    </div>
                 </div>
-            </div>
+            }
 
-            <!-- ===== 2. KPI ROW ===== -->
-            <div class="mb-8 grid grid-cols-2 gap-4 md:grid-cols-4">
-                <div class="rounded-2xl bg-card p-4 shadow">
-                    <div class="text-xs font-semibold uppercase tracking-wider text-secondary">Brands getrackt</div>
-                    <div class="mt-1 text-2xl font-bold">{{ totalBrands() }}</div>
-                </div>
-                <div class="rounded-2xl bg-card p-4 shadow">
-                    <div class="text-xs font-semibold uppercase tracking-wider text-secondary">AI-Antworten analysiert</div>
-                    <div class="mt-1 text-2xl font-bold">{{ totalConversations() }}</div>
-                    <div class="mt-0.5 flex gap-2 text-xs text-secondary">
-                        @for (m of conversationsByModel(); track m.model) {
-                            <span>{{ getModelLabel(m.model) }}: {{ m.count }}</span>
+            <!-- ===== 2. WETTBEWERBER CARDS ===== -->
+            @if (competitorSummaries().length > 0) {
+                <div class="mb-6">
+                    <div class="mb-3 text-sm font-semibold uppercase tracking-wider text-secondary">Wettbewerber</div>
+                    <div class="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                        @for (brand of competitorSummaries(); track brand.brand_name) {
+                            <div class="relative overflow-hidden rounded-xl bg-card p-4 shadow transition-shadow hover:shadow-md">
+                                <div class="mb-2 text-sm font-bold">{{ brand.brand_name }}</div>
+                                <div class="text-2xl font-extrabold tabular-nums"
+                                     [class]="brand.latestVisibility > 0 ? 'text-indigo-600 dark:text-indigo-400' : 'text-secondary'">
+                                    {{ brand.latestVisibility | number:'1.1-1' }}%
+                                </div>
+                                @if (brand.change !== 0) {
+                                    <div class="mt-0.5 flex items-center gap-0.5 text-xs font-semibold"
+                                         [class]="brand.change > 0 ? 'text-green-600' : 'text-red-500'">
+                                        <mat-icon class="icon-size-3.5"
+                                                  [svgIcon]="brand.change > 0 ? 'heroicons_solid:arrow-trending-up' : 'heroicons_solid:arrow-trending-down'">
+                                        </mat-icon>
+                                        {{ brand.change > 0 ? '+' : '' }}{{ brand.change | number:'1.1-1' }}% vs. Vorwoche
+                                    </div>
+                                } @else {
+                                    <div class="mt-0.5 text-xs text-secondary">Keine Trenddaten</div>
+                                }
+                                <!-- Top bar -->
+                                <div class="absolute left-0 right-0 top-0 h-0.5"
+                                     [class]="brand.latestVisibility >= 30 ? 'bg-indigo-500' : brand.latestVisibility >= 10 ? 'bg-amber-400' : 'bg-gray-300 dark:bg-gray-600'">
+                                </div>
+                            </div>
                         }
                     </div>
                 </div>
-                <div class="rounded-2xl bg-card p-4 shadow">
-                    <div class="text-xs font-semibold uppercase tracking-wider text-secondary">Prompts beobachtet</div>
-                    <div class="mt-1 text-2xl font-bold">{{ totalPrompts() }}</div>
-                </div>
-                <div class="rounded-2xl bg-card p-4 shadow">
-                    <div class="text-xs font-semibold uppercase tracking-wider text-secondary">Ø Quellen pro Antwort</div>
-                    <div class="mt-1 text-2xl font-bold">{{ avgSourcesPerConv() }}</div>
-                </div>
-            </div>
+            }
 
-            <!-- ===== 3. VISIBILITY CHART ===== -->
+            <!-- ===== 4. VISIBILITY CHART ===== -->
             @if (visibilityChartSeries().length > 0) {
-                <div class="mb-8 overflow-hidden rounded-2xl bg-card shadow">
+                <div class="mb-6 overflow-hidden rounded-2xl bg-card shadow">
                     <div class="p-6">
-                        <div class="mb-1 text-lg font-bold">Sichtbarkeit im Zeitverlauf</div>
-                        <div class="mb-4 text-sm text-secondary">
-                            In wie viel % der AI-Antworten wird eine Brand erwähnt?
+                        <div class="mb-1 flex items-center justify-between">
+                            <div class="text-lg font-bold">Sichtbarkeit im Zeitverlauf</div>
+                            <div class="flex overflow-hidden rounded-lg border border-gray-200 dark:border-gray-700">
+                                @for (d of [7, 30, 90]; track d) {
+                                    <button class="px-3 py-1.5 text-xs font-semibold transition-colors"
+                                            [class]="selectedRange() === d
+                                                ? 'bg-primary text-on-primary'
+                                                : 'bg-card hover:bg-gray-100 dark:hover:bg-gray-800 text-secondary'"
+                                            (click)="setQuickRange($any(d))">
+                                        {{ d }}T
+                                    </button>
+                                }
+                            </div>
                         </div>
-                        <div style="min-height: 380px;">
+                        <div class="mb-4 text-sm text-secondary">
+                            Anteil der Chats mit Markenerwähnung in den letzten 7 Tagen
+                        </div>
+                        <div style="min-height: 350px;">
                             <apx-chart
                                 [chart]="chartVisibilityConfig().chart"
                                 [colors]="chartVisibilityConfig().colors"
@@ -143,160 +191,358 @@
                 </div>
             }
 
-            <!-- ===== 4. AI CONVERSATIONS ===== -->
-            <div class="mb-8">
-                <div class="mb-4 flex items-center justify-between">
-                    <div>
-                        <div class="text-lg font-bold">AI-Antworten</div>
-                        <div class="text-sm text-secondary">Was sagen ChatGPT, Perplexity &amp; Google AI zu deinen Themen?</div>
-                    </div>
-                    <span class="text-sm text-secondary">{{ filteredConversations().length }} Antworten</span>
-                </div>
-
-                <!-- Search -->
-                <mat-form-field appearance="outline" class="mb-4 w-full" subscriptSizing="dynamic">
-                    <mat-icon matPrefix [svgIcon]="'heroicons_outline:magnifying-glass'" class="mr-2"></mat-icon>
-                    <input matInput
-                           [value]="conversationSearch()"
-                           (input)="conversationSearch.set($any($event.target).value)"
-                           placeholder="Suche in Fragen & Antworten...">
-                </mat-form-field>
-
-                <!-- Conversation Cards -->
-                <div class="space-y-4">
-                    @for (conv of visibleConversations(); track conv.chat_id) {
-                        <div class="overflow-hidden rounded-2xl bg-card shadow">
-                            <!-- Top Bar: Model + Date + Counts -->
-                            <div class="flex items-center justify-between px-5 py-3">
-                                <div class="flex items-center gap-3">
-                                    <span class="rounded-lg px-2.5 py-1 text-xs font-bold"
-                                          [class]="getModelColor(conv.model_id)">
-                                        {{ getModelLabel(conv.model_id) }}
-                                    </span>
-                                    <span class="text-xs text-secondary">{{ conv.created_at | date:'dd.MM.yyyy' }}</span>
-                                </div>
-                                <div class="flex items-center gap-3 text-xs text-secondary">
-                                    @if (conv.sources_count) {
-                                        <span class="flex items-center gap-1">
-                                            <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:link'"></mat-icon>
-                                            {{ conv.sources_count }} Quellen
-                                        </span>
-                                    }
-                                    @if (conv.brands_count) {
-                                        <span class="flex items-center gap-1">
-                                            <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:building-office'"></mat-icon>
-                                            {{ conv.brands_count }} Brands
-                                        </span>
-                                    }
-                                </div>
-                            </div>
-
-                            <!-- User Question -->
-                            <div class="border-t border-gray-100 px-5 py-4 dark:border-gray-800">
-                                <div class="text-sm font-semibold leading-relaxed">
-                                    {{ conv.user_message }}
-                                </div>
-                            </div>
-
-                            <!-- Assistant Answer (collapsed / expanded) -->
-                            <div class="border-t border-gray-50 bg-gray-50/50 px-5 py-4 dark:border-gray-800 dark:bg-gray-800/30">
-                                @if (isExpanded(conv.chat_id)) {
-                                    <div class="whitespace-pre-line text-sm leading-relaxed text-secondary">{{ conv.assistant_message }}</div>
-                                } @else {
-                                    <div class="line-clamp-2 text-sm leading-relaxed text-secondary">{{ conv.assistant_message }}</div>
-                                }
-
-                                <!-- Expand/Collapse Button -->
-                                <button class="mt-3 flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
-                                        (click)="toggleConversation(conv.chat_id)">
-                                    @if (isExpanded(conv.chat_id)) {
-                                        <mat-icon class="icon-size-4" [svgIcon]="'heroicons_outline:chevron-up'"></mat-icon>
-                                        Antwort einklappen
-                                    } @else {
-                                        <mat-icon class="icon-size-4" [svgIcon]="'heroicons_outline:chevron-down'"></mat-icon>
-                                        Komplette Antwort lesen
-                                    }
-                                </button>
-                            </div>
-                        </div>
-                    }
-                </div>
-
-                <!-- Show More Button -->
-                @if (filteredConversations().length > 10 && !showAllConversations()) {
-                    <div class="mt-4 text-center">
-                        <button mat-stroked-button (click)="showAllConversations.set(true)">
-                            Alle {{ filteredConversations().length }} Antworten anzeigen
-                        </button>
-                    </div>
-                }
-            </div>
-
-            <!-- ===== 5. EXTRAHIERTE URLS ===== -->
-            @if (extractedUrlsFromConversations().length > 0) {
-                <div class="mb-8 overflow-hidden rounded-2xl bg-card shadow">
+            <!-- ===== 4b. RANKINGS TABLE ===== -->
+            @if (rankingRows().length > 0) {
+                <div class="mb-6 overflow-hidden rounded-2xl bg-card shadow">
                     <div class="p-6">
-                        <div class="mb-1 text-lg font-bold">Wo wirst du verlinkt?</div>
-                        <div class="mb-4 text-sm text-secondary">
-                            Diese URLs wurden in AI-Antworten gefunden
+                        <div class="mb-4 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <mat-icon class="text-secondary">leaderboard</mat-icon>
+                                <span class="text-lg font-bold">Rankings</span>
+                                <span class="text-secondary text-sm">&middot; Top-Marken in LLM-Antworten für deine Prompts</span>
+                            </div>
+                            @if (rankingRows().length > 5) {
+                                <button class="flex items-center gap-1 text-sm font-medium text-secondary hover:text-default transition-colors"
+                                        (click)="showAllRankings.set(!showAllRankings())">
+                                    {{ showAllRankings() ? 'Show Less' : 'Show All' }}
+                                    <mat-icon class="icon-size-4">{{ showAllRankings() ? 'expand_less' : 'north_east' }}</mat-icon>
+                                </button>
+                            }
                         </div>
 
-                        <div class="space-y-2">
-                            @for (url of extractedUrlsFromConversations(); track url.url; let i = $index) {
-                                <div class="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800/50">
-                                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
-                                        {{ i + 1 }}
-                                    </div>
-                                    <div class="min-w-0 flex-1">
-                                        <a [href]="url.url" target="_blank"
-                                           class="block truncate text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
-                                            {{ url.url }}
-                                        </a>
-                                        <div class="text-xs text-secondary">{{ url.domain }}</div>
-                                    </div>
-                                    @if (url.count && url.count > 1) {
-                                        <span class="shrink-0 rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
-                                            {{ url.count }}x erwähnt
-                                        </span>
+                        <div class="overflow-x-auto">
+                            <table class="w-full">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th class="py-3 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-secondary w-10">#</th>
+                                        <th class="py-3 pr-4 text-left text-xs font-semibold uppercase tracking-wider text-secondary">Brand</th>
+                                        <th class="py-3 px-4 text-right text-xs font-semibold uppercase tracking-wider text-secondary cursor-pointer select-none hover:text-default transition-colors"
+                                            matTooltip="Die Sichtbarkeit der Marke, wenn sie in den letzten 7 Tagen erwähnt wurde."
+                                            (click)="toggleRankingSort('visibility')">
+                                            <div class="flex items-center justify-end gap-1">
+                                                Visibility
+                                                <mat-icon class="icon-size-3.5 text-gray-400">unfold_more</mat-icon>
+                                            </div>
+                                        </th>
+                                        <th class="py-3 px-4 text-right text-xs font-semibold uppercase tracking-wider text-secondary cursor-pointer select-none hover:text-default transition-colors"
+                                            matTooltip="Die Erwähnungen der Marke im Verhältnis zur Gesamtzahl aller Markenerwähnungen in allen Chats der letzten 7 Tage."
+                                            (click)="toggleRankingSort('sov')">
+                                            <div class="flex items-center justify-end gap-1">
+                                                SOV
+                                                <mat-icon class="icon-size-3.5 text-gray-400">unfold_more</mat-icon>
+                                            </div>
+                                        </th>
+                                        <th class="py-3 px-4 text-right text-xs font-semibold uppercase tracking-wider text-secondary cursor-pointer select-none hover:text-default transition-colors"
+                                            matTooltip="Der Sentiment-Score der Marke, wenn sie in den letzten 7 Tagen erwähnt wurde."
+                                            (click)="toggleRankingSort('sentiment')">
+                                            <div class="flex items-center justify-end gap-1">
+                                                Sentiment
+                                                <mat-icon class="icon-size-3.5 text-gray-400">unfold_more</mat-icon>
+                                            </div>
+                                        </th>
+                                        <th class="py-3 pl-4 text-right text-xs font-semibold uppercase tracking-wider text-secondary cursor-pointer select-none hover:text-default transition-colors"
+                                            matTooltip="Die durchschnittliche Position der Marke, wenn sie in den letzten 7 Tagen erwähnt wurde."
+                                            (click)="toggleRankingSort('position')">
+                                            <div class="flex items-center justify-end gap-1">
+                                                Position
+                                                <mat-icon class="icon-size-3.5 text-gray-400">unfold_more</mat-icon>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (row of (showAllRankings() ? rankingRows() : rankingRows().slice(0, 5)); track row.brand_name) {
+                                        <tr class="border-b border-gray-100 dark:border-gray-800 transition-colors cursor-pointer"
+                                            [ngClass]="row.isOwn ? 'bg-emerald-50/50 dark:bg-emerald-900/10 hover:bg-emerald-50 dark:hover:bg-emerald-900/20' : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'"
+                                            (click)="onBrandChange(row.brand_name)">
+                                            <!-- Rank -->
+                                            <td class="py-4 pr-4 text-sm font-medium text-secondary">{{ row.rank }}</td>
+                                            <!-- Brand -->
+                                            <td class="py-4 pr-4">
+                                                <div class="flex items-center gap-3">
+                                                    <div class="flex h-9 w-9 items-center justify-center rounded-lg text-xs font-bold"
+                                                         [class]="row.isOwn
+                                                            ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                                            : 'bg-gray-100 text-gray-600 dark:bg-gray-700 dark:text-gray-300'">
+                                                        {{ row.brand_name.substring(0, 2).toUpperCase() }}
+                                                    </div>
+                                                    <span class="font-semibold text-sm" [ngClass]="row.isOwn ? 'text-emerald-700 dark:text-emerald-400' : ''">
+                                                        {{ row.brand_name }}
+                                                    </span>
+                                                </div>
+                                            </td>
+                                            <!-- Visibility -->
+                                            <td class="py-4 px-4 text-right">
+                                                <div class="flex items-center justify-end gap-2">
+                                                    @if (row.visibilityChange !== null && row.visibilityChange !== 0) {
+                                                        <span class="flex items-center text-xs font-medium"
+                                                              [class]="row.visibilityChange > 0 ? 'text-green-500' : 'text-red-500'">
+                                                            <mat-icon class="icon-size-3.5">{{ row.visibilityChange > 0 ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+                                                            {{ (row.visibilityChange > 0 ? row.visibilityChange : -row.visibilityChange) | number:'1.0-0' }}&thinsp;%
+                                                        </span>
+                                                    }
+                                                    <span class="text-sm font-semibold">{{ row.visibility | number:'1.0-0' }}&thinsp;%</span>
+                                                </div>
+                                            </td>
+                                            <!-- SOV -->
+                                            <td class="py-4 px-4 text-right">
+                                                <div class="flex items-center justify-end gap-2">
+                                                    @if (row.sovChange !== null && row.sovChange !== 0) {
+                                                        <span class="flex items-center text-xs font-medium"
+                                                              [class]="row.sovChange > 0 ? 'text-green-500' : 'text-red-500'">
+                                                            <mat-icon class="icon-size-3.5">{{ row.sovChange > 0 ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+                                                            {{ (row.sovChange > 0 ? row.sovChange : -row.sovChange) | number:'1.0-0' }}&thinsp;%
+                                                        </span>
+                                                    }
+                                                    <span class="text-sm font-semibold">{{ row.sov | number:'1.0-0' }}&thinsp;%</span>
+                                                </div>
+                                            </td>
+                                            <!-- Sentiment -->
+                                            <td class="py-4 px-4 text-right">
+                                                <div class="flex items-center justify-end gap-2">
+                                                    @if (row.sentimentChange !== null && row.sentimentChange !== 0) {
+                                                        <span class="flex items-center text-xs font-medium"
+                                                              [class]="row.sentimentChange > 0 ? 'text-green-500' : 'text-red-500'">
+                                                            <mat-icon class="icon-size-3.5">{{ row.sentimentChange > 0 ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+                                                            {{ (row.sentimentChange > 0 ? row.sentimentChange : -row.sentimentChange) }}
+                                                        </span>
+                                                    }
+                                                    <span class="inline-block h-2.5 w-2.5 rounded-full" [class]="getSentimentDot(row.sentiment)"></span>
+                                                    <span class="text-sm font-semibold">{{ row.sentiment !== null ? row.sentiment : '—' }}</span>
+                                                </div>
+                                            </td>
+                                            <!-- Position -->
+                                            <td class="py-4 pl-4 text-right">
+                                                <div class="flex items-center justify-end gap-2">
+                                                    @if (row.positionChange !== null && row.positionChange !== 0) {
+                                                        <span class="flex items-center text-xs font-medium"
+                                                              [class]="row.positionChange < 0 ? 'text-green-500' : 'text-red-500'">
+                                                            <mat-icon class="icon-size-3.5">{{ row.positionChange < 0 ? 'arrow_drop_up' : 'arrow_drop_down' }}</mat-icon>
+                                                            {{ (row.positionChange > 0 ? row.positionChange : -row.positionChange) | number:'1.1-1' }}
+                                                        </span>
+                                                    } @else if (row.positionChange === null) {
+                                                        <span class="text-sm text-secondary">—</span>
+                                                    }
+                                                    <span class="text-sm font-semibold">{{ row.position !== null ? '#' + (row.position | number:'1.1-1') : '—' }}</span>
+                                                </div>
+                                            </td>
+                                        </tr>
                                     }
-                                </div>
-                            }
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
             }
 
-            <!-- ===== 6. AI URLs (from Supabase) ===== -->
+@if (totalPrompts() > 0) {
+                <div class="mb-6">
+                    <div class="mb-3 flex items-center justify-between">
+                        <div>
+                            <div class="text-lg font-bold">Beobachtete Prompts</div>
+                            <div class="text-sm text-secondary">
+                                Welche Suchanfragen werden in AI-Suchmaschinen gestellt?
+                            </div>
+                        </div>
+                        <span class="text-sm text-secondary">{{ filteredPrompts().length }}/{{ totalPrompts() }}</span>
+                    </div>
+
+                    <!-- Search -->
+                    <mat-form-field appearance="outline" class="mb-3 w-full" subscriptSizing="dynamic">
+                        <mat-icon matPrefix [svgIcon]="'heroicons_outline:magnifying-glass'" class="mr-2"></mat-icon>
+                        <input matInput
+                               [value]="promptSearchTerm()"
+                               (input)="promptSearchTerm.set($any($event.target).value)"
+                               placeholder="Prompts durchsuchen...">
+                    </mat-form-field>
+
+                    <div class="overflow-hidden rounded-2xl bg-card shadow">
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-sm">
+                                <thead>
+                                    <tr class="border-b border-gray-200 dark:border-gray-700">
+                                        <th class="px-4 py-3 text-left font-semibold text-secondary">Prompt</th>
+                                        <th class="w-24 px-4 py-3 text-right font-semibold text-secondary">Volume</th>
+                                        <th class="w-16 px-4 py-3 text-center font-semibold text-secondary">Land</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    @for (prompt of visiblePrompts(); track prompt.id) {
+                                        <tr class="cursor-pointer border-b border-gray-100 transition-colors hover:bg-primary/5 dark:border-gray-800 dark:hover:bg-primary/10"
+                                            (click)="openPromptDetail(prompt)">
+                                            <td class="px-4 py-3">
+                                                <div class="flex items-center gap-2">
+                                                    <span>{{ prompt.text }}</span>
+                                                    <mat-icon class="icon-size-3.5 shrink-0 text-secondary" [svgIcon]="'heroicons_outline:arrow-top-right-on-square'"></mat-icon>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-right font-semibold tabular-nums">
+                                                @if (prompt.volume) {
+                                                    {{ prompt.volume | number }}
+                                                } @else {
+                                                    <span class="text-secondary">–</span>
+                                                }
+                                            </td>
+                                            <td class="px-4 py-3 text-center">
+                                                @if (prompt.country) {
+                                                    <span class="rounded bg-gray-100 px-1.5 py-0.5 text-[11px] font-medium dark:bg-gray-800">
+                                                        {{ prompt.country }}
+                                                    </span>
+                                                }
+                                            </td>
+                                        </tr>
+                                    }
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <!-- Show More -->
+                    @if (filteredPrompts().length > 20 && !showAllPrompts()) {
+                        <div class="mt-3 text-center">
+                            <button mat-stroked-button (click)="showAllPrompts.set(true)">
+                                Alle {{ filteredPrompts().length }} Prompts anzeigen
+                            </button>
+                        </div>
+                    }
+                </div>
+            }
+            <!-- ===== 5. WO WIRST DU VERLINKT? ===== -->
+            @if (extractedUrlsFromConversations().length > 0) {
+                <div class="mb-6 overflow-hidden rounded-2xl bg-card shadow">
+                    <div class="p-6">
+                        <div class="mb-1 text-lg font-bold">Wo wirst du in AI-Antworten verlinkt?</div>
+                        <div class="mb-5 text-sm text-secondary">
+                            Diese URLs wurden in den Antworten von {{ activeModelLabels() }} gefunden
+                        </div>
+
+                        <!-- Own URLs (limited to 10 combined) -->
+                        @if (limitedOwnUrls().length > 0) {
+                            <div class="mb-5">
+                                <div class="mb-2 flex items-center gap-2">
+                                    <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                        Deine Seiten
+                                    </span>
+                                    <span class="text-xs text-secondary">{{ ownUrls().length }} URLs</span>
+                                </div>
+                                <div class="space-y-1.5">
+                                    @for (url of limitedOwnUrls(); track url.url; let i = $index) {
+                                        <div class="flex cursor-pointer items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/50 px-4 py-2.5 transition-colors hover:bg-emerald-100/60 dark:border-emerald-800/30 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40"
+                                             (click)="openUrlDetail(url.url)">
+                                            <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
+                                                {{ i + 1 }}
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="block truncate text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                                                    {{ url.url }}
+                                                </div>
+                                            </div>
+                                            @if (url.count && url.count > 1) {
+                                                <span class="shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                                                    {{ url.count }}x
+                                                </span>
+                                            }
+                                            <mat-icon class="icon-size-4 shrink-0 text-emerald-400" [svgIcon]="'heroicons_outline:arrow-top-right-on-square'"></mat-icon>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- External URLs (limited, fills up to 10 combined) -->
+                        @if (limitedExternalUrls().length > 0) {
+                            <div>
+                                <div class="mb-2 flex items-center gap-2">
+                                    <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                                        Externe Seiten
+                                    </span>
+                                    <span class="text-xs text-secondary">{{ externalUrls().length }} URLs</span>
+                                </div>
+                                <div class="space-y-1.5">
+                                    @for (url of limitedExternalUrls(); track url.url; let i = $index) {
+                                        <div class="flex cursor-pointer items-center gap-3 rounded-xl bg-gray-50 px-4 py-2.5 transition-colors hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800"
+                                             (click)="openUrlDetail(url.url)">
+                                            <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-300 text-[10px] font-bold text-gray-700 dark:bg-gray-600 dark:text-gray-200">
+                                                {{ i + 1 }}
+                                            </div>
+                                            <div class="min-w-0 flex-1">
+                                                <div class="block truncate text-sm font-medium text-blue-600 dark:text-blue-400">
+                                                    {{ url.url }}
+                                                </div>
+                                                <div class="text-[11px] text-secondary">{{ url.domain }}</div>
+                                            </div>
+                                            @if (url.count && url.count > 1) {
+                                                <span class="shrink-0 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-bold text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                                                    {{ url.count }}x
+                                                </span>
+                                            }
+                                            <mat-icon class="icon-size-4 shrink-0 text-gray-400" [svgIcon]="'heroicons_outline:arrow-top-right-on-square'"></mat-icon>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Show more button -->
+                        @if (totalUrlCount() > 10) {
+                            <div class="mt-4 text-center">
+                                <button mat-stroked-button (click)="openAllUrlsDialog()">
+                                    Alle {{ totalUrlCount() }} URLs anzeigen
+                                </button>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            
+
+            <!-- ===== 6. AI URLs (from ai_visibility_urls table) ===== -->
             @if (filteredAiUrls().length > 0) {
-                <div class="mb-8 overflow-hidden rounded-2xl bg-card shadow">
+                <div class="mb-6 overflow-hidden rounded-2xl bg-card shadow">
                     <div class="p-6">
                         <div class="mb-1 text-lg font-bold">Top AI-referenzierte URLs</div>
                         <div class="mb-4 text-sm text-secondary">
-                            URLs aus der ai_visibility_urls Tabelle
+                            Meistgenannte URLs in AI-Antworten (ai_visibility_urls)
                         </div>
 
-                        <div class="space-y-2">
+                        <div class="space-y-1.5">
                             @for (url of filteredAiUrls(); track url.id; let i = $index) {
-                                <div class="flex items-center gap-3 rounded-xl bg-gray-50 px-4 py-3 dark:bg-gray-800/50">
-                                    <div class="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-primary/10 text-xs font-bold text-primary">
+                                <div class="flex cursor-pointer items-center gap-3 rounded-xl px-4 py-2.5 transition-colors"
+                                     [class]="isOwnDomain(url.domain ?? '')
+                                         ? 'border border-emerald-200 bg-emerald-50/50 hover:bg-emerald-100/60 dark:border-emerald-800/30 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40'
+                                         : 'bg-gray-50 hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800'"
+                                     (click)="openUrlDetail(url.url)">
+                                    <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full text-[10px] font-bold"
+                                         [class]="isOwnDomain(url.domain ?? '')
+                                             ? 'bg-emerald-500 text-white'
+                                             : 'bg-gray-300 text-gray-700 dark:bg-gray-600 dark:text-gray-200'">
                                         {{ i + 1 }}
                                     </div>
                                     <div class="min-w-0 flex-1">
-                                        <a [href]="url.url" target="_blank"
-                                           class="block truncate text-sm font-medium text-blue-600 hover:underline dark:text-blue-400">
+                                        <div class="block truncate text-sm font-medium"
+                                             [class]="isOwnDomain(url.domain ?? '')
+                                                 ? 'text-emerald-700 dark:text-emerald-400'
+                                                 : 'text-blue-600 dark:text-blue-400'">
                                             {{ url.url }}
-                                        </a>
-                                        <div class="text-xs text-secondary">{{ url.domain }}</div>
+                                        </div>
+                                        <div class="text-[11px] text-secondary">{{ url.domain }}</div>
                                     </div>
                                     @if (url.classification) {
-                                        <span class="shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold"
+                                        <span class="shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold"
                                               [class]="getClassificationClass(url.classification)">
                                             {{ url.classification }}
                                         </span>
                                     }
-                                    @if (url.mention_count) {
-                                        <span class="shrink-0 text-sm font-bold">{{ url.mention_count }}x</span>
+                                    @if (isOwnDomain(url.domain ?? '')) {
+                                        <span class="shrink-0 rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                            Deine Seite
+                                        </span>
                                     }
+                                    @if (url.mention_count) {
+                                        <span class="shrink-0 text-sm font-bold tabular-nums">{{ url.mention_count }}x</span>
+                                    }
+                                    <mat-icon class="icon-size-4 shrink-0 text-gray-400" [svgIcon]="'heroicons_outline:arrow-top-right-on-square'"></mat-icon>
                                 </div>
                             }
                         </div>
@@ -306,11 +552,11 @@
 
             <!-- ===== 7. LLM DOMAIN USAGE ===== -->
             @if (llmDomainRows().length > 0) {
-                <div class="mb-8 overflow-hidden rounded-2xl bg-card shadow">
+                <div class="mb-6 overflow-hidden rounded-2xl bg-card shadow">
                     <div class="p-6">
-                        <div class="mb-1 text-lg font-bold">Domain-Zitierungen nach LLM</div>
+                        <div class="mb-1 text-lg font-bold">Welche Domains werden von AI zitiert?</div>
                         <div class="mb-4 text-sm text-secondary">
-                            Welche Domains werden von welchem LLM-Modell zitiert?
+                            Domain-Zitierungen aufgeschlüsselt nach LLM-Modell
                         </div>
 
                         <div class="overflow-x-auto">
@@ -326,11 +572,23 @@
                                 </thead>
                                 <tbody>
                                     @for (row of llmDomainRows(); track row.domain) {
-                                        <tr class="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
-                                            <td class="px-4 py-3 font-medium">{{ row.domain }}</td>
-                                            <td class="px-4 py-3 text-right font-bold">{{ row.totalCitations }}</td>
+                                        <tr class="cursor-pointer border-b border-gray-100 transition-colors dark:border-gray-800"
+                                            [class]="row.isOwn
+                                                ? 'bg-emerald-50/50 hover:bg-emerald-50 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/30'
+                                                : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'"
+                                            (click)="openDomainDetail(row.domain)">
+                                            <td class="px-4 py-3 font-medium">
+                                                <div class="flex items-center gap-2">
+                                                    {{ row.domain }}
+                                                    @if (row.isOwn) {
+                                                        <span class="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">DEINE</span>
+                                                    }
+                                                    <mat-icon class="icon-size-3.5 text-gray-400" [svgIcon]="'heroicons_outline:arrow-top-right-on-square'"></mat-icon>
+                                                </div>
+                                            </td>
+                                            <td class="px-4 py-3 text-right font-bold tabular-nums">{{ row.totalCitations }}</td>
                                             @for (model of ['ChatGPT', 'Perplexity', 'Google AI']; track model) {
-                                                <td class="px-4 py-3 text-right">
+                                                <td class="px-4 py-3 text-right tabular-nums">
                                                     {{ getModelCount(row, model) ?? '–' }}
                                                 </td>
                                             }
@@ -343,77 +601,694 @@
                 </div>
             }
 
-            <!-- ===== 8. PROMPTS ===== -->
-            @if (totalPrompts() > 0) {
-                <div class="mb-8">
-                    <div class="mb-4 flex items-center justify-between">
-                        <div>
-                            <div class="text-lg font-bold">Beobachtete Prompts</div>
-                            <div class="text-sm text-secondary">
-                                Welche Suchanfragen werden in AI-Suchmaschinen gestellt?
-                            </div>
-                        </div>
-                        <span class="text-sm text-secondary">
-                            {{ filteredPrompts().length }} von {{ totalPrompts() }}
-                        </span>
+            <!-- ===== 8. AI CONVERSATIONS ===== -->
+            <div class="mb-6">
+                <div class="mb-4 flex items-center justify-between">
+                    <div>
+                        <div class="text-lg font-bold">AI-Antworten</div>
+                        <div class="text-sm text-secondary">Was sagen {{ activeModelLabels() }}?</div>
                     </div>
+                    <span class="text-sm text-secondary">{{ filteredConversations().length }} Antworten</span>
+                </div>
 
-                    <!-- Search -->
-                    <mat-form-field appearance="outline" class="mb-4 w-full" subscriptSizing="dynamic">
+                <!-- Filter Bar: Search + Own Mention Toggle -->
+                <div class="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+                    <mat-form-field appearance="outline" class="flex-1" subscriptSizing="dynamic">
                         <mat-icon matPrefix [svgIcon]="'heroicons_outline:magnifying-glass'" class="mr-2"></mat-icon>
                         <input matInput
-                               [value]="promptSearchTerm()"
-                               (input)="promptSearchTerm.set($any($event.target).value)"
-                               placeholder="Prompts durchsuchen...">
+                               [value]="conversationSearch()"
+                               (input)="conversationSearch.set($any($event.target).value)"
+                               placeholder="Suche in Fragen & Antworten...">
                     </mat-form-field>
+                    <button class="flex items-center gap-2 rounded-lg px-4 py-2 text-sm font-semibold transition-colors"
+                            [class]="onlyOwnMentions()
+                                ? 'bg-emerald-100 text-emerald-700 ring-1 ring-emerald-300 dark:bg-emerald-900/30 dark:text-emerald-300 dark:ring-emerald-700'
+                                : 'bg-card text-secondary ring-1 ring-gray-200 hover:bg-gray-50 dark:ring-gray-700 dark:hover:bg-gray-800'"
+                            (click)="onlyOwnMentions.set(!onlyOwnMentions())">
+                        <mat-icon class="icon-size-4" [svgIcon]="'heroicons_outline:funnel'"></mat-icon>
+                        @if (onlyOwnMentions()) {
+                            Nur {{ ownBrandName() ?? 'eigene' }} ({{ ownMentionCount() }})
+                        } @else {
+                            Nur wo ich erwähnt werde ({{ ownMentionCount() }})
+                        }
+                    </button>
+                </div>
 
-                    <div class="overflow-hidden rounded-2xl bg-card shadow">
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-sm">
-                                <thead>
-                                    <tr class="border-b border-gray-200 dark:border-gray-700">
-                                        <th class="px-4 py-3 text-left font-semibold text-secondary">Prompt</th>
-                                        <th class="w-24 px-4 py-3 text-right font-semibold text-secondary">Volume</th>
-                                        <th class="w-20 px-4 py-3 text-center font-semibold text-secondary">Land</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    @for (prompt of visiblePrompts(); track prompt.id) {
-                                        <tr class="border-b border-gray-100 hover:bg-gray-50 dark:border-gray-800 dark:hover:bg-gray-800/50">
-                                            <td class="px-4 py-3">{{ prompt.text }}</td>
-                                            <td class="px-4 py-3 text-right font-semibold tabular-nums">
-                                                @if (prompt.volume) {
-                                                    {{ prompt.volume | number }}
-                                                } @else {
-                                                    <span class="text-secondary">–</span>
-                                                }
-                                            </td>
-                                            <td class="px-4 py-3 text-center">
-                                                @if (prompt.country) {
-                                                    <span class="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium dark:bg-gray-800">
-                                                        {{ prompt.country }}
-                                                    </span>
-                                                }
-                                            </td>
-                                        </tr>
+                <!-- Conversation Cards -->
+                <div class="space-y-3">
+                    @for (conv of visibleConversations(); track conv.chat_id) {
+                        <div class="overflow-hidden rounded-2xl bg-card shadow"
+                             [class]="conversationMentionsOwn(conv) ? 'ring-1 ring-emerald-300 dark:ring-emerald-700' : ''">
+
+                            <!-- Header -->
+                            <div class="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-800">
+                                <div class="flex items-center gap-2">
+                                    <span class="rounded-lg px-2.5 py-1 text-[11px] font-bold"
+                                          [class]="getModelColor(conv.model_id)">
+                                        {{ getModelLabel(conv.model_id) }}
+                                    </span>
+                                    <span class="text-xs text-secondary">{{ conv.created_at | date:'dd.MM.yy' }}</span>
+                                    @if (conversationMentionsOwn(conv)) {
+                                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                            Du wirst erwähnt
+                                        </span>
                                     }
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
+                                </div>
+                                <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-2 text-xs text-secondary">
+                                        @if (conv.sources_count) {
+                                            <span class="flex items-center gap-0.5">
+                                                <mat-icon class="icon-size-3" [svgIcon]="'heroicons_outline:link'"></mat-icon>
+                                                {{ conv.sources_count }}
+                                            </span>
+                                        }
+                                        @if (conv.brands_count) {
+                                            <span class="flex items-center gap-0.5">
+                                                <mat-icon class="icon-size-3" [svgIcon]="'heroicons_outline:building-office'"></mat-icon>
+                                                {{ conv.brands_count }}
+                                            </span>
+                                        }
+                                    </div>
+                                    <button class="rounded-lg p-1.5 text-secondary transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+                                            (click)="openConversationDetail(conv.chat_id)"
+                                            matTooltip="Detail anzeigen">
+                                        <mat-icon class="icon-size-4" [svgIcon]="'heroicons_outline:arrows-pointing-out'"></mat-icon>
+                                    </button>
+                                </div>
+                            </div>
 
-                    <!-- Show More -->
-                    @if (filteredPrompts().length > 20 && !showAllPrompts()) {
-                        <div class="mt-4 text-center">
-                            <button mat-stroked-button (click)="showAllPrompts.set(true)">
-                                Alle {{ filteredPrompts().length }} Prompts anzeigen
-                            </button>
+                            <!-- User Question -->
+                            <div class="px-5 py-3">
+                                <div class="text-sm font-semibold leading-relaxed">{{ conv.user_message }}</div>
+                            </div>
+
+                            <!-- Assistant Answer -->
+                            <div class="border-t border-gray-50 bg-gray-50/50 px-5 py-3 dark:border-gray-800 dark:bg-gray-800/20">
+                                @if (isExpanded(conv.chat_id)) {
+                                    <div class="whitespace-pre-line text-sm leading-relaxed text-secondary">{{ conv.assistant_message }}</div>
+
+                                    <!-- URL Chips (shown when expanded) -->
+                                    @if (getConversationUrls(conv.chat_id).length > 0) {
+                                        <div class="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
+                                            <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-secondary">URLs in dieser Antwort</div>
+                                            <div class="flex flex-wrap gap-1.5">
+                                                @for (u of getConversationUrls(conv.chat_id); track u.url) {
+                                                    <button class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors"
+                                                            [class]="u.isOwn
+                                                                ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50'
+                                                                : 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40'"
+                                                            (click)="openUrlDetail(u.url); $event.stopPropagation()">
+                                                        <mat-icon class="icon-size-3" [svgIcon]="'heroicons_outline:link'"></mat-icon>
+                                                        {{ u.domain }}
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+
+                                    <!-- Matched Prompts (shown when expanded) -->
+                                    @if (getConversationPrompts(conv.chat_id).length > 0) {
+                                        <div class="mt-2 border-t border-gray-100 pt-2 dark:border-gray-700">
+                                            <div class="mb-1 text-[11px] font-semibold uppercase tracking-wider text-secondary">Passende Prompts</div>
+                                            <div class="flex flex-wrap gap-1.5">
+                                                @for (p of getConversationPrompts(conv.chat_id); track p.id) {
+                                                    <button class="inline-flex items-center gap-1 rounded-full bg-purple-50 px-2.5 py-1 text-[11px] font-medium text-purple-600 transition-colors hover:bg-purple-100 dark:bg-purple-900/20 dark:text-purple-400 dark:hover:bg-purple-900/40"
+                                                            (click)="openPromptDetail(p); $event.stopPropagation()">
+                                                        <mat-icon class="icon-size-3" [svgIcon]="'heroicons_outline:chat-bubble-left'"></mat-icon>
+                                                        {{ p.text.length > 40 ? p.text.substring(0, 40) + '...' : p.text }}
+                                                    </button>
+                                                }
+                                            </div>
+                                        </div>
+                                    }
+                                } @else {
+                                    <div class="line-clamp-2 text-sm leading-relaxed text-secondary">{{ conv.assistant_message }}</div>
+                                }
+
+                                <button class="mt-2 flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                                        (click)="toggleConversation(conv.chat_id)">
+                                    @if (isExpanded(conv.chat_id)) {
+                                        <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:chevron-up'"></mat-icon>
+                                        Einklappen
+                                    } @else {
+                                        <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:chevron-down'"></mat-icon>
+                                        Komplette Antwort lesen
+                                    }
+                                </button>
+                            </div>
                         </div>
                     }
                 </div>
-            }
+
+                <!-- Show More -->
+                @if (filteredConversations().length > 10) {
+                    <div class="mt-4 text-center">
+                        <button mat-stroked-button (click)="openAllConversationsDialog()">
+                            Alle {{ filteredConversations().length }} Antworten anzeigen
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <!-- ===== 9. PROMPTS ===== -->
+            
 
         }
 
     </div>
 </div>
+
+<!-- ===== UNIFIED DIALOG OVERLAY ===== -->
+@if (activeDialog(); as dialog) {
+    <div class="fixed inset-0 z-[999] flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-12 backdrop-blur-sm"
+         (click)="closeDialog()"
+         (keydown.escape)="closeDialog()">
+        <div class="relative w-full max-w-3xl rounded-2xl bg-card shadow-2xl"
+             (click)="$event.stopPropagation()">
+
+            <!-- Dialog Header -->
+            <div class="sticky top-0 z-10 flex items-start justify-between rounded-t-2xl border-b border-gray-200 bg-card p-5 dark:border-gray-700">
+                <div class="min-w-0 flex-1 pr-4">
+                    <!-- Back + Breadcrumb -->
+                    <div class="mb-2 flex items-center gap-2">
+                        @if (dialogHistory().length > 0) {
+                            <button class="flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-secondary transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    (click)="goBackDialog()">
+                                <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:arrow-left'"></mat-icon>
+                                Zurück
+                            </button>
+                            <span class="text-xs text-gray-300 dark:text-gray-600">/</span>
+                        }
+                        <span class="text-[11px] font-semibold uppercase tracking-wider text-secondary">
+                            @switch (dialog.type) {
+                                @case ('prompt') { Prompt }
+                                @case ('url') { URL Detail }
+                                @case ('conversation') { AI-Antwort }
+                            }
+                        </span>
+                    </div>
+
+                    <!-- Title per type -->
+                    @switch (dialog.type) {
+                        @case ('prompt') {
+                            <div class="text-lg font-bold leading-snug">{{ dialog.prompt.text }}</div>
+                            <div class="mt-2 flex flex-wrap items-center gap-2">
+                                @if (dialog.prompt.volume) {
+                                    <span class="rounded-full bg-primary/10 px-2.5 py-0.5 text-xs font-bold text-primary">
+                                        Vol. {{ dialog.prompt.volume | number }}
+                                    </span>
+                                }
+                                @if (dialog.prompt.country) {
+                                    <span class="rounded bg-gray-100 px-2 py-0.5 text-xs font-medium dark:bg-gray-800">
+                                        {{ dialog.prompt.country }}
+                                    </span>
+                                }
+                                <span class="text-xs text-secondary">
+                                    {{ dialogPromptConversations().length }} AI-Antworten gefunden
+                                </span>
+                            </div>
+                        }
+                        @case ('url') {
+                            <div class="flex items-center gap-2">
+                                <div class="truncate text-lg font-bold leading-snug">{{ dialog.urlDetail.url }}</div>
+                                @if (dialog.urlDetail.isOwn) {
+                                    <span class="shrink-0 rounded-full bg-emerald-100 px-2.5 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Deine Seite</span>
+                                }
+                            </div>
+                            <div class="mt-1 flex items-center gap-3 text-xs text-secondary">
+                                <span>{{ dialog.urlDetail.domain }}</span>
+                                <span>{{ dialog.urlDetail.count }}x in AI-Antworten gefunden</span>
+                            </div>
+                        }
+                        @case ('conversation') {
+                            <div class="flex items-center gap-2">
+                                <span class="rounded-lg px-2.5 py-1 text-[11px] font-bold"
+                                      [class]="getModelColor(dialog.detail.conversation.model_id)">
+                                    {{ getModelLabel(dialog.detail.conversation.model_id) }}
+                                </span>
+                                <span class="text-xs text-secondary">{{ dialog.detail.conversation.created_at | date:'dd.MM.yy HH:mm' }}</span>
+                                @if (dialog.detail.mentionsOwn) {
+                                    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Du wirst erwähnt</span>
+                                }
+                            </div>
+                            <div class="mt-1 flex items-center gap-3 text-xs text-secondary">
+                                @if (dialog.detail.conversation.sources_count) {
+                                    <span>{{ dialog.detail.conversation.sources_count }} Quellen</span>
+                                }
+                                <span>{{ dialog.detail.extractedUrls.length }} URLs</span>
+                                <span>{{ dialog.detail.matchedPrompts.length }} Prompts</span>
+                                <span>{{ dialog.detail.mentionedBrands.length }} Brands</span>
+                            </div>
+                        }
+                    }
+                </div>
+                <button mat-icon-button (click)="closeDialog()" class="shrink-0">
+                    <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
+                </button>
+            </div>
+
+            <!-- Dialog Body -->
+            <div class="max-h-[70vh] overflow-y-auto p-5">
+
+                @switch (dialog.type) {
+
+                    <!-- ========== PROMPT DIALOG ========== -->
+                    @case ('prompt') {
+                        @if (dialogPromptConversations().length === 0) {
+                            <div class="py-12 text-center text-secondary">
+                                <mat-icon class="icon-size-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" [svgIcon]="'heroicons_outline:chat-bubble-left-right'"></mat-icon>
+                                <div class="text-sm">Keine AI-Antworten für diesen Prompt gefunden</div>
+                            </div>
+                        } @else {
+                            <!-- URLs found in prompt conversations -->
+                            @if (dialogPromptUrls().length > 0) {
+                                <div class="mb-5 rounded-xl border border-gray-100 p-4 dark:border-gray-800">
+                                    <div class="mb-2 text-xs font-semibold uppercase tracking-wider text-secondary">URLs in diesen Antworten</div>
+                                    <div class="flex flex-wrap gap-1.5">
+                                        @for (u of dialogPromptUrls(); track u.url) {
+                                            <button class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors"
+                                                    [class]="u.isOwn
+                                                        ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                                        : 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400'"
+                                                    (click)="openUrlDetail(u.url)">
+                                                <mat-icon class="icon-size-3" [svgIcon]="'heroicons_outline:link'"></mat-icon>
+                                                {{ u.domain }}
+                                                @if (u.count && u.count > 1) {
+                                                    <span class="ml-0.5 opacity-60">{{ u.count }}x</span>
+                                                }
+                                            </button>
+                                        }
+                                    </div>
+                                </div>
+                            }
+
+                            <!-- Grouped by Model -->
+                            @for (group of dialogPromptConvsByModel(); track group.model) {
+                                <div class="mb-5 last:mb-0">
+                                    <div class="mb-2 flex items-center gap-2">
+                                        <span class="rounded-lg px-2.5 py-1 text-xs font-bold"
+                                              [class]="getModelColor(group.model)">
+                                            {{ getModelLabel(group.model) }}
+                                        </span>
+                                        <span class="text-xs text-secondary">{{ group.items.length }} Antwort{{ group.items.length !== 1 ? 'en' : '' }}</span>
+                                    </div>
+
+                                    <div class="space-y-2">
+                                        @for (conv of group.items; track conv.chat_id) {
+                                            <div class="overflow-hidden rounded-xl border border-gray-100 dark:border-gray-800"
+                                                 [class]="conversationMentionsOwn(conv) ? 'ring-1 ring-emerald-300 dark:ring-emerald-700' : ''">
+
+                                                <!-- Conv Header -->
+                                                <div class="flex items-center justify-between bg-gray-50/50 px-4 py-2 dark:bg-gray-800/30">
+                                                    <div class="flex items-center gap-2 text-xs text-secondary">
+                                                        <span>{{ conv.created_at | date:'dd.MM.yy' }}</span>
+                                                        @if (conv.sources_count) {
+                                                            <span class="flex items-center gap-0.5">
+                                                                <mat-icon class="icon-size-3" [svgIcon]="'heroicons_outline:link'"></mat-icon>
+                                                                {{ conv.sources_count }}
+                                                            </span>
+                                                        }
+                                                        @if (conversationMentionsOwn(conv)) {
+                                                            <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                                                Du wirst erwähnt
+                                                            </span>
+                                                        }
+                                                    </div>
+                                                    <button class="rounded-lg p-1 text-secondary transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                            (click)="openConversationDetail(conv.chat_id)"
+                                                            matTooltip="Detail anzeigen">
+                                                        <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:arrows-pointing-out'"></mat-icon>
+                                                    </button>
+                                                </div>
+
+                                                <!-- Answer -->
+                                                <div class="px-4 py-3">
+                                                    @if (isDialogExpanded(conv.chat_id)) {
+                                                        <div class="whitespace-pre-line text-sm leading-relaxed text-secondary">{{ conv.assistant_message }}</div>
+                                                    } @else {
+                                                        <div class="line-clamp-4 text-sm leading-relaxed text-secondary">{{ conv.assistant_message }}</div>
+                                                    }
+
+                                                    <button class="mt-2 flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                                                            (click)="toggleDialogConversation(conv.chat_id)">
+                                                        @if (isDialogExpanded(conv.chat_id)) {
+                                                            <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:chevron-up'"></mat-icon>
+                                                            Einklappen
+                                                        } @else {
+                                                            <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:chevron-down'"></mat-icon>
+                                                            Komplette Antwort lesen
+                                                        }
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        }
+                                    </div>
+                                </div>
+                            }
+                        }
+                    }
+
+                    <!-- ========== URL DIALOG ========== -->
+                    @case ('url') {
+                        <!-- Conversations citing this URL -->
+                        <div class="mb-5">
+                            <div class="mb-3 text-sm font-semibold">AI-Antworten mit dieser URL</div>
+                            @if (dialogUrlConversations().length === 0) {
+                                <div class="py-8 text-center text-sm text-secondary">Keine Antworten gefunden</div>
+                            } @else {
+                                <div class="space-y-2">
+                                    @for (conv of dialogUrlConversations(); track conv.chat_id) {
+                                        <div class="cursor-pointer overflow-hidden rounded-xl border border-gray-100 transition-colors hover:border-gray-200 dark:border-gray-800 dark:hover:border-gray-700"
+                                             [class]="conversationMentionsOwn(conv) ? 'ring-1 ring-emerald-300 dark:ring-emerald-700' : ''">
+                                            <div class="flex items-center justify-between bg-gray-50/50 px-4 py-2 dark:bg-gray-800/30">
+                                                <div class="flex items-center gap-2 text-xs">
+                                                    <span class="rounded-lg px-2 py-0.5 text-[10px] font-bold" [class]="getModelColor(conv.model_id)">
+                                                        {{ getModelLabel(conv.model_id) }}
+                                                    </span>
+                                                    <span class="text-secondary">{{ conv.created_at | date:'dd.MM.yy' }}</span>
+                                                    @if (conversationMentionsOwn(conv)) {
+                                                        <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">Du wirst erwähnt</span>
+                                                    }
+                                                </div>
+                                                <button class="rounded-lg p-1 text-secondary transition-colors hover:bg-gray-100 dark:hover:bg-gray-700"
+                                                        (click)="openConversationDetail(conv.chat_id)"
+                                                        matTooltip="Detail anzeigen">
+                                                    <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:arrows-pointing-out'"></mat-icon>
+                                                </button>
+                                            </div>
+                                            <div class="px-4 py-2">
+                                                <div class="text-sm font-semibold">{{ conv.user_message }}</div>
+                                            </div>
+                                            <div class="border-t border-gray-50 bg-gray-50/30 px-4 py-2 dark:border-gray-800 dark:bg-gray-800/10">
+                                                @if (isDialogExpanded(conv.chat_id)) {
+                                                    <div class="whitespace-pre-line text-sm leading-relaxed text-secondary">{{ conv.assistant_message }}</div>
+                                                } @else {
+                                                    <div class="line-clamp-3 text-sm leading-relaxed text-secondary">{{ conv.assistant_message }}</div>
+                                                }
+                                                <button class="mt-1.5 flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                                                        (click)="toggleDialogConversation(conv.chat_id)">
+                                                    @if (isDialogExpanded(conv.chat_id)) {
+                                                        <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:chevron-up'"></mat-icon>
+                                                        Einklappen
+                                                    } @else {
+                                                        <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:chevron-down'"></mat-icon>
+                                                        Komplette Antwort lesen
+                                                    }
+                                                </button>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            }
+                        </div>
+
+                        <!-- Related Prompts -->
+                        @if (dialogUrlPrompts().length > 0) {
+                            <div class="mb-5 rounded-xl border border-gray-100 p-4 dark:border-gray-800">
+                                <div class="mb-2 text-xs font-semibold uppercase tracking-wider text-secondary">Passende Prompts</div>
+                                <div class="space-y-1">
+                                    @for (p of dialogUrlPrompts(); track p.id) {
+                                        <button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                                                (click)="openPromptDetail(p)">
+                                            <mat-icon class="icon-size-4 shrink-0 text-purple-500" [svgIcon]="'heroicons_outline:chat-bubble-left'"></mat-icon>
+                                            <span class="flex-1">{{ p.text }}</span>
+                                            @if (p.volume) {
+                                                <span class="shrink-0 text-xs text-secondary">Vol. {{ p.volume | number }}</span>
+                                            }
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Mentioned Brands -->
+                        @if (dialogUrlBrands().length > 0) {
+                            <div class="rounded-xl border border-gray-100 p-4 dark:border-gray-800">
+                                <div class="mb-2 text-xs font-semibold uppercase tracking-wider text-secondary">Erwähnte Brands</div>
+                                <div class="flex flex-wrap gap-1.5">
+                                    @for (brand of dialogUrlBrands(); track brand) {
+                                        <button class="rounded-full px-3 py-1 text-xs font-semibold transition-colors"
+                                                [class]="isOwnBrand(brand)
+                                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'"
+                                                (click)="filterByBrandFromDialog(brand)">
+                                            {{ brand }}
+                                            @if (isOwnBrand(brand)) {
+                                                <span class="ml-0.5 text-[9px]">★</span>
+                                            }
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+
+                    <!-- ========== CONVERSATION DIALOG ========== -->
+                    @case ('conversation') {
+                        <!-- User Question -->
+                        <div class="mb-4 rounded-xl bg-primary/5 p-4">
+                            <div class="mb-1 text-[11px] font-semibold uppercase tracking-wider text-secondary">Frage</div>
+                            <div class="text-sm font-semibold leading-relaxed">{{ dialog.detail.conversation.user_message }}</div>
+                        </div>
+
+                        <!-- Full AI Answer -->
+                        <div class="mb-4">
+                            <div class="mb-1 text-[11px] font-semibold uppercase tracking-wider text-secondary">AI-Antwort</div>
+                            <div class="whitespace-pre-line text-sm leading-relaxed text-secondary">{{ dialog.detail.conversation.assistant_message }}</div>
+                        </div>
+
+                        <!-- Extracted URLs -->
+                        @if (dialog.detail.extractedUrls.length > 0) {
+                            <div class="mb-4 rounded-xl border border-gray-100 p-4 dark:border-gray-800">
+                                <div class="mb-2 text-xs font-semibold uppercase tracking-wider text-secondary">
+                                    URLs in dieser Antwort ({{ dialog.detail.extractedUrls.length }})
+                                </div>
+                                <div class="flex flex-wrap gap-1.5">
+                                    @for (u of dialog.detail.extractedUrls; track u.url) {
+                                        <button class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors"
+                                                [class]="u.isOwn
+                                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                                    : 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400'"
+                                                (click)="openUrlDetail(u.url)">
+                                            <mat-icon class="icon-size-3" [svgIcon]="'heroicons_outline:link'"></mat-icon>
+                                            {{ u.domain }}
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Matched Prompts -->
+                        @if (dialog.detail.matchedPrompts.length > 0) {
+                            <div class="mb-4 rounded-xl border border-gray-100 p-4 dark:border-gray-800">
+                                <div class="mb-2 text-xs font-semibold uppercase tracking-wider text-secondary">Passende Prompts</div>
+                                <div class="space-y-1">
+                                    @for (p of dialog.detail.matchedPrompts; track p.id) {
+                                        <button class="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-left text-sm transition-colors hover:bg-gray-50 dark:hover:bg-gray-800"
+                                                (click)="openPromptDetail(p)">
+                                            <mat-icon class="icon-size-4 shrink-0 text-purple-500" [svgIcon]="'heroicons_outline:chat-bubble-left'"></mat-icon>
+                                            <span class="flex-1">{{ p.text }}</span>
+                                            @if (p.volume) {
+                                                <span class="shrink-0 text-xs text-secondary">Vol. {{ p.volume | number }}</span>
+                                            }
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+
+                        <!-- Mentioned Brands -->
+                        @if (dialog.detail.mentionedBrands.length > 0) {
+                            <div class="rounded-xl border border-gray-100 p-4 dark:border-gray-800">
+                                <div class="mb-2 text-xs font-semibold uppercase tracking-wider text-secondary">Erwähnte Brands</div>
+                                <div class="flex flex-wrap gap-1.5">
+                                    @for (brand of dialog.detail.mentionedBrands; track brand) {
+                                        <button class="rounded-full px-3 py-1 text-xs font-semibold transition-colors"
+                                                [class]="isOwnBrand(brand)
+                                                    ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300'
+                                                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200 dark:bg-gray-800 dark:text-gray-300'"
+                                                (click)="filterByBrandFromDialog(brand)">
+                                            {{ brand }}
+                                            @if (isOwnBrand(brand)) {
+                                                <span class="ml-0.5 text-[9px]">★</span>
+                                            }
+                                        </button>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    }
+                }
+            </div>
+        </div>
+    </div>
+}
+
+<!-- ===== ALL URLS DIALOG ===== -->
+@if (showAllUrlsDialog()) {
+    <div class="fixed inset-0 z-[999] flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-12 backdrop-blur-sm"
+         (click)="closeAllUrlsDialog()">
+        <div class="relative w-full max-w-3xl rounded-2xl bg-card p-6 shadow-2xl"
+             (click)="$event.stopPropagation()">
+            <button class="absolute right-4 top-4" mat-icon-button (click)="closeAllUrlsDialog()">
+                <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
+            </button>
+            <div class="mb-1 text-lg font-bold">Alle verlinkten URLs</div>
+            <div class="mb-5 text-sm text-secondary">{{ totalUrlCount() }} URLs aus AI-Antworten</div>
+
+            <!-- Own URLs -->
+            @if (ownUrls().length > 0) {
+                <div class="mb-5">
+                    <div class="mb-2 flex items-center gap-2">
+                        <span class="rounded-full bg-emerald-100 px-2.5 py-0.5 text-xs font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                            Deine Seiten
+                        </span>
+                        <span class="text-xs text-secondary">{{ ownUrls().length }} URLs</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        @for (url of ownUrls(); track url.url; let i = $index) {
+                            <div class="flex cursor-pointer items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50/50 px-4 py-2.5 transition-colors hover:bg-emerald-100/60 dark:border-emerald-800/30 dark:bg-emerald-950/20 dark:hover:bg-emerald-950/40"
+                                 (click)="closeAllUrlsDialog(); openUrlDetail(url.url)">
+                                <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-emerald-500 text-[10px] font-bold text-white">
+                                    {{ i + 1 }}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="block truncate text-sm font-medium text-emerald-700 dark:text-emerald-400">
+                                        {{ url.url }}
+                                    </div>
+                                </div>
+                                @if (url.count && url.count > 1) {
+                                    <span class="shrink-0 rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-bold text-emerald-700 dark:text-emerald-300">
+                                        {{ url.count }}x
+                                    </span>
+                                }
+                                <mat-icon class="icon-size-4 shrink-0 text-emerald-400" [svgIcon]="'heroicons_outline:arrow-top-right-on-square'"></mat-icon>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+
+            <!-- External URLs -->
+            @if (externalUrls().length > 0) {
+                <div>
+                    <div class="mb-2 flex items-center gap-2">
+                        <span class="rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-bold text-gray-600 dark:bg-gray-800 dark:text-gray-400">
+                            Externe Seiten
+                        </span>
+                        <span class="text-xs text-secondary">{{ externalUrls().length }} URLs</span>
+                    </div>
+                    <div class="space-y-1.5">
+                        @for (url of externalUrls(); track url.url; let i = $index) {
+                            <div class="flex cursor-pointer items-center gap-3 rounded-xl bg-gray-50 px-4 py-2.5 transition-colors hover:bg-gray-100 dark:bg-gray-800/50 dark:hover:bg-gray-800"
+                                 (click)="closeAllUrlsDialog(); openUrlDetail(url.url)">
+                                <div class="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-gray-300 text-[10px] font-bold text-gray-700 dark:bg-gray-600 dark:text-gray-200">
+                                    {{ i + 1 }}
+                                </div>
+                                <div class="min-w-0 flex-1">
+                                    <div class="block truncate text-sm font-medium text-blue-600 dark:text-blue-400">
+                                        {{ url.url }}
+                                    </div>
+                                    <div class="text-[11px] text-secondary">{{ url.domain }}</div>
+                                </div>
+                                @if (url.count && url.count > 1) {
+                                    <span class="shrink-0 rounded-full bg-gray-200 px-2 py-0.5 text-xs font-bold text-gray-600 dark:bg-gray-700 dark:text-gray-300">
+                                        {{ url.count }}x
+                                    </span>
+                                }
+                                <mat-icon class="icon-size-4 shrink-0 text-gray-400" [svgIcon]="'heroicons_outline:arrow-top-right-on-square'"></mat-icon>
+                            </div>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+}
+
+<!-- ===== ALL CONVERSATIONS DIALOG ===== -->
+@if (showAllConversationsDialog()) {
+    <div class="fixed inset-0 z-[999] flex items-start justify-center overflow-y-auto bg-black/50 p-4 pt-12 backdrop-blur-sm"
+         (click)="closeAllConversationsDialog()">
+        <div class="relative w-full max-w-3xl rounded-2xl bg-card p-6 shadow-2xl"
+             (click)="$event.stopPropagation()">
+            <button class="absolute right-4 top-4" mat-icon-button (click)="closeAllConversationsDialog()">
+                <mat-icon [svgIcon]="'heroicons_outline:x-mark'"></mat-icon>
+            </button>
+            <div class="mb-1 text-lg font-bold">Alle AI-Antworten</div>
+            <div class="mb-5 text-sm text-secondary">{{ filteredConversations().length }} Antworten</div>
+
+            <div class="space-y-3 max-h-[70vh] overflow-y-auto">
+                @for (conv of filteredConversations(); track conv.chat_id) {
+                    <div class="overflow-hidden rounded-2xl bg-gray-50 dark:bg-gray-800/50"
+                         [class]="conversationMentionsOwn(conv) ? 'ring-1 ring-emerald-300 dark:ring-emerald-700' : ''">
+
+                        <!-- Header -->
+                        <div class="flex items-center justify-between border-b border-gray-100 px-5 py-3 dark:border-gray-700">
+                            <div class="flex items-center gap-2">
+                                <span class="rounded-lg px-2.5 py-1 text-[11px] font-bold"
+                                      [class]="getModelColor(conv.model_id)">
+                                    {{ getModelLabel(conv.model_id) }}
+                                </span>
+                                <span class="text-xs text-secondary">{{ conv.created_at | date:'dd.MM.yy' }}</span>
+                                @if (conversationMentionsOwn(conv)) {
+                                    <span class="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-300">
+                                        Du wirst erwähnt
+                                    </span>
+                                }
+                            </div>
+                            <button class="rounded-lg p-1.5 text-secondary transition-colors hover:bg-gray-100 dark:hover:bg-gray-800"
+                                    (click)="closeAllConversationsDialog(); openConversationDetail(conv.chat_id)"
+                                    matTooltip="Detail anzeigen">
+                                <mat-icon class="icon-size-4" [svgIcon]="'heroicons_outline:arrows-pointing-out'"></mat-icon>
+                            </button>
+                        </div>
+
+                        <!-- User Question -->
+                        <div class="px-5 py-3">
+                            <div class="text-sm font-semibold leading-relaxed">{{ conv.user_message }}</div>
+                        </div>
+
+                        <!-- Assistant Answer -->
+                        <div class="border-t border-gray-100 bg-white/50 px-5 py-3 dark:border-gray-700 dark:bg-gray-900/20">
+                            @if (isDialogExpanded(conv.chat_id)) {
+                                <div class="whitespace-pre-line text-sm leading-relaxed text-secondary">{{ conv.assistant_message }}</div>
+
+                                @if (getConversationUrls(conv.chat_id).length > 0) {
+                                    <div class="mt-3 border-t border-gray-100 pt-3 dark:border-gray-700">
+                                        <div class="mb-1.5 text-[11px] font-semibold uppercase tracking-wider text-secondary">URLs in dieser Antwort</div>
+                                        <div class="flex flex-wrap gap-1.5">
+                                            @for (u of getConversationUrls(conv.chat_id); track u.url) {
+                                                <button class="inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium transition-colors"
+                                                        [class]="u.isOwn
+                                                            ? 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 dark:bg-emerald-900/30 dark:text-emerald-300 dark:hover:bg-emerald-900/50'
+                                                            : 'bg-blue-50 text-blue-600 hover:bg-blue-100 dark:bg-blue-900/20 dark:text-blue-400 dark:hover:bg-blue-900/40'"
+                                                        (click)="closeAllConversationsDialog(); openUrlDetail(u.url); $event.stopPropagation()">
+                                                    <mat-icon class="icon-size-3" [svgIcon]="'heroicons_outline:link'"></mat-icon>
+                                                    {{ u.domain }}
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            } @else {
+                                <div class="line-clamp-2 text-sm leading-relaxed text-secondary">{{ conv.assistant_message }}</div>
+                            }
+
+                            <button class="mt-2 flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
+                                    (click)="toggleDialogConversation(conv.chat_id)">
+                                @if (isDialogExpanded(conv.chat_id)) {
+                                    <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:chevron-up'"></mat-icon>
+                                    Einklappen
+                                } @else {
+                                    <mat-icon class="icon-size-3.5" [svgIcon]="'heroicons_outline:chevron-down'"></mat-icon>
+                                    Komplette Antwort lesen
+                                }
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+}

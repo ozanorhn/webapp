@@ -45,8 +45,9 @@ export interface PeecTopic {
 
 export interface PeecModel {
     id: string;
-    name?: string;
-    [key: string]: any;
+    is_active: boolean;
+    project_id: string | null;
+    created_at: string;
 }
 
 export interface PeecPrompt {
@@ -101,9 +102,12 @@ export interface BrandVisibilityHistory {
     brand_id: string | null;
     brand_name: string;
     report_date: string;
-    visibility: number;
+    visibility: number | null;
     visibility_percent: number;
+    visibility_count: number | null;
+    visibility_total: number | null;
     sentiment: number | null;
+    sentiment_avg: number | null;
     position_avg: number | null;
     created_at: string;
 }

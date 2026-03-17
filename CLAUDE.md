@@ -1,425 +1,247 @@
-# CLAUDE.md - Projektanleitung für Claude
+# CLAUDE.md - Projektanleitung
 
-## 🎯 Projektbeschreibung
+## Projektbeschreibung
 
-**Fuse Angular Admin Dashboard** - Ein modernes Admin-Dashboard basierend auf dem Fuse Template Framework mit Material Design, aufgebaut mit Angular 19.
-
-### Kernzweck
-Multi-Brand SEO Analytics Dashboard mit Fokus auf GEO-AI Datenvisualisierung und SISTRIX Integration.
+**Fuse Angular Admin Dashboard** - Multi-Brand SEO Analytics Dashboard mit GEO-AI Datenvisualisierung, SISTRIX Integration und Supabase Backend. Basierend auf Angular 19 mit Material Design + Tailwind CSS.
 
 ---
 
-## 🏗️ Architektur & Struktur
+## Architektur
 
 ### Verzeichnisstruktur
 ```
 starter/
 ├── src/app/
-│   ├── core/              # Services: auth, user, navigation, icons
-│   ├── layout/            # Main Layout Component
+│   ├── core/                    # Globale Services
+│   │   ├── auth/               # AuthService, Guards, Interceptors
+│   │   ├── user/               # UserService
+│   │   ├── navigation/         # NavigationService
+│   │   ├── icons/              # IconsProvider
+│   │   ├── transloco/          # i18n Loader
+│   │   └── supabase/           # Supabase Services
+│   │       ├── supabase.service.ts          # Auth (signIn, signUp, signOut)
+│   │       ├── supabase-database.service.ts # CRUD + spezifische Queries
+│   │       └── supabase.types.ts            # Alle Interfaces
+│   ├── layout/                 # Main Layout Component
 │   ├── modules/
-│   │   ├── auth/          # Authentication flows (lazy-loaded)
-│   │   ├── landing/       # Public home page
-│   │   └── admin/         # Protected routes (AuthGuard)
+│   │   ├── auth/               # Sign-in, Sign-up, Password Reset (lazy, NoAuthGuard)
+│   │   ├── landing/            # Public Home Page
+│   │   └── admin/              # Protected Routes (lazy, AuthGuard)
 │   │       ├── dashboard/
 │   │       ├── analytics/
 │   │       ├── sistrix/
-│   │       ├── geo-ai-pack/  # Webhook-basierte GEO-Daten
+│   │       ├── geo-ai-pack/    # GEO AI Dashboard (Hauptmodul)
 │   │       └── example/
-│   ├── mock-api/          # Development Mock API
-│   └── @fuse/             # Fuse Framework (directives, pipes, services, etc.)
-├── public/                # Static assets, logos, images
-└── dist/                  # Build output
+│   ├── mock-api/               # Development Mock API
+│   └── @fuse/                  # Fuse Framework (nicht bearbeiten)
+├── public/                     # Statische Assets
+└── dist/                       # Build Output
 ```
 
-### Key Technologies
+### Tech Stack
 - **Framework**: Angular 19.0.5 (Standalone Components)
-- **UI Framework**: Angular Material 19.0.4 + Tailwind CSS 3.4.17
-- **Charts**: ApexCharts via ng-apexcharts
-- **i18n**: Transloco 7.5.1 (English, Turkish)
-- **Build Tool**: Angular CLI 19.0.6
-- **Styling**: Tailwind CSS mit Material Color Palette
-- **Type**: TypeScript 5.6.3
+- **UI**: Angular Material 19.0.4 + Tailwind CSS 3.4.17
+- **Charts**: ApexCharts (ng-apexcharts)
+- **State**: Angular Signals + RxJS
+- **Backend**: Supabase (PostgREST)
+- **i18n**: Transloco 7.5.1
+- **Build**: Angular CLI 19.0.6 (Vite)
+- **TypeScript**: 5.6.3
 
 ---
 
-## 🔐 Authentication & Guards
+## GEO AI Dashboard (Hauptmodul)
 
-### Routing-Konzept
-- **PublicGuard (NoAuthGuard)**: Nur für nicht authentifizierte Nutzer (sign-in, sign-up)
-- **ProtectedGuard (AuthGuard)**: Nur für authentifizierte Nutzer (admin routes)
-- **MockAPI**: Nutzt Mock-Daten in Entwicklung
+### Route
+`/geo-ai-pack` (lazy-loaded, AuthGuard)
 
-### Wichtige Services
-- `AuthService` - Authentifizierung, Token Management
-- `UserService` - Benutzerdaten
-- `NavigationService` - Menu/Navigation Items
+### Dateien
+- `src/app/modules/admin/geo-ai-pack/geo-ai-pack.component.ts` - Gesamte Logik
+- `src/app/modules/admin/geo-ai-pack/geo-ai-pack.component.html` - Template
 
----
+### Architektur-Pattern: Angular Signals
+Das GEO AI Dashboard nutzt **Angular Signals** als State Management (keine RxJS-Subjects, kein ChangeDetectorRef):
 
-## 🎨 Design & Styling
+```
+Raw Data Signals        Filter Signals              Computed Signals
+─────────────────       ──────────────              ────────────────
+_brands                 selectedBrand               brandSummaries
+_brandVisibility        selectedRange (7/30/90)     ownBrandSummary
+_aiUrls                 conversationSearch           competitorSummaries
+_llmUsage               onlyOwnMentions             filteredConversations
+_conversations          promptSearchTerm             extractedUrlsFromConversations
+_prompts                selectedLlmModel             visibilityChartSeries
+                                                     llmDomainRows
+                                                     _urlConvIndex (bidirektional)
+                                                     _promptConvIndex (bidirektional)
+```
 
-### Theme System
-- **Verfügbare Themes**: 6 Optionen (Default, Brand, Teal, Rose, Purple, Amber)
-- **Default Theme**: `theme-default`
-- **Responsive Breakpoints**: sm (600px), md (960px), lg (1280px), xl (1440px)
-- **Styling**: Tailwind CSS mit Material Design Prinzipien
-- **Dark Mode**: Fuse unterstützt automatisch Dark Mode
+### Datenquellen (6 Supabase-Tabellen)
+| Tabelle | Service-Methode | Typ |
+|---------|----------------|-----|
+| `peec_brands` | `fetchBrands()` | `PeecBrand[]` |
+| `brand_visibility_history` | `fetchBrandVisibility(filters)` | `BrandVisibilityHistory[]` |
+| `ai_visibility_urls` | `fetchAiUrls(filters)` | `AIVisibilityUrl[]` |
+| `llm_domain_usage` | `fetchLlmUsage(filters)` | `LlmDomainUsage[]` |
+| `llm_data` | `fetchConversations(filters)` | `LlmData[]` (PK: `chat_id`, NICHT `id`) |
+| `peec_prompts` | `fetchPrompts(filters)` | `PeecPrompt[]` |
 
-### Komponenten-Konventionen
-- Standalone Components (Angular 19 Style)
-- ViewEncapsulation.None für Tailwind Integration
-- ChangeDetectionStrategy.OnPush für Performance
-- OnPush + ChangeDetectorRef.markForCheck() Pattern
-
----
-
-## 📱 Module im Detail
-
-### 1. Auth Module (`src/app/modules/auth/`)
-**Lazy-loaded, ungeschützt**
-- `sign-in` - Login
-- `sign-up` - Registrierung
-- `forgot-password` - Passwort vergessen
-- `reset-password` - Passwort zurücksetzen
-- `confirmation-required` - Email Bestätigung
-- `unlock-session` - Session Entsperrung
-
-### 2. Admin Module (`src/app/modules/admin/`)
-**Lazy-loaded, mit AuthGuard geschützt**
-
-#### Dashboard
-- Hauptübersicht für authentifizierte Nutzer
-
-#### Analytics
-- Datenvisualisierung und Reporting
-
-#### SISTRIX
-- Integration mit SISTRIX SEO Tool
-
-#### **Geo-AI Pack** ⭐ (Neuestes Feature)
-- **Datenquelle**: Webhook `https://n8n.eom.de/webhook/geo-ai`
-- **Funktionalität**:
-  - Zeigt Multi-Brand Visibility Metriken
-  - Historische Daten mit Datumsvergleich
-  - ApexCharts Area Chart mit Gradient
-  - Deutsche Fehlerausgaben
-  - Deduplication nach ID
-  - Sortierung nach Visibility (absteigend)
-- **Data Interface**:
-  ```typescript
-  interface GeoAiEntry {
-    id: string;
-    report_date: string;
-    brand_id: string;
-    brand_name: string;
-    visibility: number;
-    visibility_percent: number;
-    position_avg: number | null;
-    sentiment_avg: number | null;
-  }
-  ```
-
-#### Example
-- Template-Komponenten und Pattern Samples
-
----
-
-## 🔄 Workflows & Best Practices
-
-### Neue Features entwickeln
-1. Feature in entsprechenden Module (z.B. `admin/`) erstellen
-2. Routes über Lazy Loading integrieren
-3. Bei Bedarf: neue Services in `core/` erstellen
-4. Material Design + Tailwind für Styling nutzen
-5. OnPush ChangeDetection für Performance
-
-### Komponenten erstellen
+### Datenladung
 ```typescript
-import { Component, ChangeDetectionStrategy } from '@angular/core';
+forkJoin({
+  brands, brandVisibility, aiUrls, llmUsage, conversations, prompts
+}).subscribe(results => { /* alle Signals setzen */ })
+```
+- Brand + Datum = Server-side Filter (trigger loadData)
+- Search, LLM Model, onlyOwnMentions = Client-side Filter (computed only)
 
+### Cross-Navigation (Drill-Down Dialog System)
+Alles ist miteinander verknüpft via In-Memory-Indexes:
+
+**Indexes (computed signals):**
+- `_urlConvIndex`: URL <-> Conversation (bidirektional)
+- `_promptConvIndex`: Prompt <-> Conversation (bidirektional, substring-match)
+
+**Dialog-System:**
+```typescript
+type ActiveDialog =
+  | { type: 'prompt'; prompt: PeecPrompt }
+  | { type: 'url'; urlDetail: UrlDetail }
+  | { type: 'conversation'; detail: ConversationDetail }
+
+activeDialog = signal<ActiveDialog | null>(null);
+dialogHistory = signal<ActiveDialog[]>([]);  // Back-Navigation Stack
+```
+
+**Navigation-Flow:**
+- URL klicken -> URL-Dialog (zeigt Conversations, Prompts, Brands)
+- Conversation klicken -> Conversation-Dialog (zeigt URLs, Prompts, Brands)
+- Prompt klicken -> Prompt-Dialog (zeigt Conversations, URLs)
+- Brand-Chip klicken -> Dialog schließen, Brand-Filter setzen
+- Zurück-Button -> vorheriger Dialog aus History
+
+### Eigene Brand Erkennung
+Auto-Detection: sucht `eom.de` in `peec_brands.domains`. Eigene URLs/Domains werden grün hervorgehoben.
+
+### UI-Sektionen (Template)
+1. Hero Card (eigene Brand mit Sichtbarkeit, Sentiment, Erwähnungen)
+2. Wettbewerber Cards (Grid)
+3. KPI Row (Brands, AI-Antworten, Prompts, Ø Quellen)
+4. Visibility Chart (ApexCharts Area)
+5. "Wo wirst du verlinkt?" (eigene vs externe URLs, klickbar)
+6. Top AI-referenzierte URLs (klickbar)
+7. LLM Domain Usage Tabelle (klickbar)
+8. AI-Antworten (Suche, "Nur wo ich erwähnt werde" Filter, expand, URL-Chips)
+9. Prompts Tabelle (klickbar -> Dialog)
+
+### ApexCharts Hinweise
+- **KEIN gradient-Fill verwenden!** SVG `url(#...)` Referenzen brechen in Angular-Routing (schwarze Flächen). Stattdessen `fill: { type: 'solid', opacity: 0.08 }` verwenden.
+- Chart Background: `background: 'transparent'`
+- Tooltip: Custom HTML mit hellem Hintergrund (kein `theme: 'dark'`)
+- `_fixSvgFill()` Methode korrigiert SVG fill-URLs bei Route-Wechsel
+
+---
+
+## Supabase
+
+### Konfiguration
+- **URL**: Proxy via `/api/supabase` (siehe `proxy.conf.json`)
+- **Environment**: `src/environments/environment.ts`
+- **Services**: `src/app/core/supabase/`
+
+### Verfügbare Tabellen
+**GA4:** `ga4_monthly_report`, `ga4_source_monthly`, `ga4_monthly_summary`
+**Peec AI:** `peec_brands`, `peec_topics`, `peec_models`, `peec_prompts`, `peec_tags`
+**SEO:** `seo_keyword_rankings`, `ai_visibility_urls`, `brand_visibility_history`, `seo_visibility_history`
+**Chat/LLM:** `chats`, `chat_messages`, `llm_data` (PK: `chat_id`!), `llm_domain_usage`
+
+### SupabaseDatabaseService API
+```typescript
+// Spezifische Methoden
+fetchBrands(): Observable<PeecBrand[]>
+fetchBrandVisibility(filters?): Observable<BrandVisibilityHistory[]>
+fetchAiUrls(filters?): Observable<AIVisibilityUrl[]>
+fetchLlmUsage(filters?): Observable<LlmDomainUsage[]>
+fetchConversations(filters?): Observable<LlmData[]>
+fetchPrompts(filters?): Observable<PeecPrompt[]>
+
+// Generische Methoden
+query<T>(tableName, limit, filters?): Observable<T[]>
+insert<T>(tableName, data): Observable<T>
+update<T>(tableName, id, data): Observable<T>
+delete(tableName, id): Observable<void>
+```
+
+---
+
+## Komponenten-Konventionen
+
+### Muster
+```typescript
 @Component({
   selector: 'app-my-component',
   templateUrl: './my-component.html',
+  encapsulation: ViewEncapsulation.None,
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [CommonModule, MatButtonModule], // Standalone
+  standalone: true,
+  imports: [CommonModule, MatButtonModule, ...],
 })
-export class MyComponent {}
-```
+export class MyComponent implements OnInit, OnDestroy {
+  // Signals statt BehaviorSubject
+  data = signal<MyType[]>([]);
+  filtered = computed(() => this.data().filter(...));
 
-### Styles mit Tailwind
-```html
-<div class="flex items-center gap-4 p-6 bg-gray-50 dark:bg-gray-900">
-  <h1 class="text-2xl font-bold text-gray-900 dark:text-white">Titel</h1>
-</div>
-```
+  private _unsubscribeAll = new Subject<void>();
 
-### Datenladung mit RxJS
-```typescript
-this._http.get(url)
-  .pipe(
-    takeUntil(this._unsubscribeAll),
-    finalize(() => { this.loading = false; })
-  )
-  .subscribe({
-    next: (data) => { /* ... */ },
-    error: (err) => { /* ... */ }
-  });
-```
-
----
-
-## 🚀 Development Workflow
-
-### Starten
-```bash
-npm install  # Dependencies installieren
-npm start    # Dev Server auf http://localhost:4200
-```
-
-### Build & Test
-```bash
-npm run build     # Production Build
-npm run watch     # Watch Mode
-npm run test      # Unit Tests via Karma
-```
-
-### Debugging
-- Angular DevTools Chrome Extension nutzen
-- Console Logs im geo-ai-pack für Webhook-Fehler
-- Mock API in `src/app/mock-api/` für schnelle Tests
-
----
-
-## 📊 Wichtige Externe Abhängigkeiten
-
-- **ApexCharts**: Chart-Visualisierung (Area, Line, etc.)
-- **Transloco**: i18n System
-- **Quill**: Rich Text Editor
-- **Material Icons**: Icon Library
-- **Perfect Scrollbar**: Custom Scrollbars
-- **Luxon**: DateTime Handling
-- **Crypto-JS**: Verschlüsselung (falls nötig)
-
----
-
-## ⚙️ Konfiguration
-
-### `angular.json`
-- Vite-basiertes Build System (Angular 19)
-- Production & Development Configurations
-- Asset Management
-
-### `tailwind.config.js`
-- Material Color Palette integriert
-- Custom Breakpoints definiert
-- Dark Mode aktiviert
-
-### `tsconfig.json`
-- Path Aliases: `@fuse`, `app/` für Imports
-
-### `proxy.conf.json`
-- Proxy für Backend-Anfragen in Entwicklung
-
----
-
-## 🔗 I18n (Transloco)
-
-### Verfügbare Sprachen
-- `en` - English
-- `tr` - Turkish
-
-### Verwendung in Templates
-```html
-<h1>{{ 'DASHBOARD.TITLE' | transloco }}</h1>
-```
-
-### In Components
-```typescript
-this.translocoService.translate('KEY').subscribe(val => {
-  // ...
-});
-```
-
----
-
-## 📝 Git & Commits
-
-### Commit-Konventionen
-```
-feat: add new feature
-fix: bug fix
-docs: documentation updates
-style: styling changes
-refactor: code refactoring
-test: test additions
-chore: maintenance
-```
-
-### Branches
-- `main` - Production Branch
-- Feature Branches: `feature/feature-name`
-
----
-
-## 🎯 Häufige Aufgaben
-
-### Neue Route hinzufügen
-1. Component in Module erstellen
-2. `.routes.ts` File in Komponenten-Ordner
-3. Lazy Loading in `app.routes.ts` eintragen
-
-### Externe API integrieren
-1. Service in `core/` erstellen
-2. HTTP Client injizieren
-3. Error Handling + Loading States
-4. Komponente subscriben mit `takeUntil()`
-
-### Neues Material-Komponenten verwenden
-1. Import in Component (`imports: [MatButtonModule]`)
-2. In Template nutzen
-3. Styling mit Tailwind anpassen
-
-### Webhook-Daten laden (wie Geo-AI)
-1. HTTP GET auf Webhook-URL
-2. Interface für Response definieren
-3. Data Processing mit Map/Filter/Sort
-4. Chart/UI Update mit ChangeDetectorRef
-
----
-
-## ⚠️ Wichtige Hinweise
-
-- **ChangeDetection**: Immer OnPush verwenden + `markForCheck()` bei async Updates
-- **Unsubscribe**: `takeUntil()` Pattern verwenden, nicht `.subscribe()` ohne cleanup
-- **Standalone**: Keine NgModules, alle Imports direkt in Component
-- **Mock API**: Für Development aktiviert, produktiv durch echte APIs ersetzen
-- **Themes**: Beim Styling auf Dark Mode testen (`dark:` Klassen)
-- **i18n**: Deutsche Strings in Geo-AI Pack sind hardcoded - ggfs. in transloco verschieben
-
----
-
-## 🗄️ Supabase Integration
-
-### Setup
-- **Local Supabase URL**: `http://91.99.96.232:8000/`
-- **Konfiguration**: `src/environments/environment.ts` - Public API Key eintragen
-- **Services**: `src/app/core/supabase/`
-
-### Verfügbare Services
-
-#### SupabaseService (Auth)
-```typescript
-import { SupabaseService } from 'app/core/supabase';
-
-constructor(private supabase: SupabaseService) {}
-
-// Sign up
-await this.supabase.signUp(email, password);
-
-// Sign in
-await this.supabase.signIn(email, password);
-
-// Sign out
-await this.supabase.signOut();
-
-// Get current user observable
-this.supabase.getAuthUser$().subscribe(user => {
-  console.log(user);
-});
-```
-
-#### SupabaseDatabaseService (CRUD)
-```typescript
-import { SupabaseDatabaseService } from 'app/core/supabase';
-import { takeUntil } from 'rxjs';
-
-export class DashboardComponent implements OnInit {
-  constructor(private db: SupabaseDatabaseService) {}
-
-  ngOnInit() {
-    // GA4 Monthly Report
-    this.db.getGA4MonthlyReport(100)
-      .pipe(takeUntil(this._unsubscribeAll))
-      .subscribe(data => console.log('GA4:', data));
-
-    // GA4 Source Monthly
-    this.db.getGA4SourceMonthly(50)
-      .subscribe(data => console.log('GA4 Sources:', data));
-
-    // Peec Brands
-    this.db.getPeecBrands(100)
-      .subscribe(brands => console.log('Brands:', brands));
-
-    // Peec Topics
-    this.db.getPeecTopics()
-      .subscribe(topics => console.log('Topics:', topics));
-
-    // SEO Keyword Rankings
-    this.db.getSEOKeywordRankings(100, { startDate: '2024-01-01' })
-      .subscribe(rankings => console.log('Keywords:', rankings));
-
-    // Get rankings for specific keyword
-    this.db.getKeywordRankingsByKeyword('angular')
-      .subscribe(rankings => console.log('Angular Rankings:', rankings));
-
-    // Insert new Peec brand
-    this.db.insertPeecBrand({
-      name: 'My Brand',
-      domains: ['domain1.com', 'domain2.com'],
-      project_id: 'project-123'
-    }).subscribe(brand => console.log('Created:', brand));
-
-    // Update Peec brand
-    this.db.updatePeecBrand(brandId, { name: 'Updated Brand' })
-      .subscribe(updated => console.log('Updated:', updated));
-
-    // Insert SEO keyword ranking
-    this.db.insertSEOKeywordRanking({
-      keyword: 'angular seo',
-      report_date: '2024-03-13',
-      current_position: 5,
-      search_volume_current: 1200,
-      status: 'tracked'
-    }).subscribe(ranking => console.log('Created:', ranking));
-
-    // Generic query on any table
-    this.db.query<any>('custom_table', 100)
-      .subscribe(data => console.log('Custom:', data));
+  ngOnDestroy(): void {
+    this._unsubscribeAll.next();
+    this._unsubscribeAll.complete();
   }
 }
 ```
 
-### Verfügbare Tabellen (Konfiguriert)
-**GA4:**
-- `ga4_monthly_report` - sessions, leads, conversion_rate by dimension
-- `ga4_source_monthly` - source breakdown
-- `ga4_monthly_summary`
-
-**Peec AI:**
-- `peec_brands` - Marken mit Domains
-- `peec_topics` - Topics/Keywords
-- `peec_models`, `peec_prompts`, `peec_tags`
-
-**SEO/Sistrix:**
-- `seo_keyword_rankings` - Keyword positions mit history
-- `ai_visibility_urls` - AI visibility tracking
-
-**Chat & LLM:**
-- `chats`, `chat_messages`
-- `llm_data`, `llm_domain_usage`
-
-### Auth mit Supabase
-Der existierende `AuthService` kann optional erweitert werden um Supabase Auth zu nutzen statt Mock API.
+### Regeln
+- **Immer OnPush** ChangeDetection
+- **Signals** bevorzugen (signal, computed) statt BehaviorSubject
+- **takeUntil(this._unsubscribeAll)** bei allen Subscriptions
+- **Standalone Components** - keine NgModules
+- **ViewEncapsulation.None** für Tailwind-Kompatibilität
+- **Tailwind + Dark Mode** - immer `dark:` Klassen mitliefern
 
 ---
 
-## 📞 Support & Ressourcen
+## Development
 
-- Angular Docs: https://angular.io
-- Material Design: https://material.io
-- Tailwind CSS: https://tailwindcss.com
-- ApexCharts: https://apexcharts.com
-- Fuse Framework Docs: Im `@fuse/` Ordner
-- **Supabase Docs**: https://supabase.com/docs
-- **Supabase Agent Skills**: https://github.com/supabase/agent-skills (PostgreSQL Best Practices)
+### Befehle
+```bash
+npm install          # Dependencies
+npm start            # Dev Server auf http://localhost:4200
+npm run build        # Production Build (npx ng build)
+npm run watch        # Watch Mode
+npm run test         # Unit Tests
+```
+
+### Routing
+- Lazy Loading: Routes in `app.routes.ts` -> Module `.routes.ts`
+- Guards: `AuthGuard` (admin), `NoAuthGuard` (auth)
+- Path Aliases: `@fuse/...`, `app/...` (tsconfig.json)
+
+### Git
+```
+feat: neue Features
+fix: Bug Fixes
+style: Styling
+refactor: Refactoring
+docs: Dokumentation
+```
+
+---
+
+## Wichtige Hinweise
+
+- **llm_data PK ist `chat_id`**, nicht `id` - bei Queries kein `.eq('id', ...)` verwenden
+- **ApexCharts + Angular Routing**: Keine SVG-Gradienten verwenden (fill type gradient), da url(#...) bricht. Immer `fill: { type: 'solid' }` nutzen.
+- **Eigene Brand**: Wird automatisch aus peec_brands erkannt (Domain enthält "eom.de")
+- **Brand-Filter**: Server-side (trigger reload) UND client-side (computed filtering in Conversations/URLs)
+- **URL-Extraktion**: Regex `/https?:\/\/([\w.-]+)(\/[^\s\)"'<>]*)*/gi` aus Assistant Messages
+- **Proxy**: API-Calls gehen über `/api/supabase` Proxy (proxy.conf.json)

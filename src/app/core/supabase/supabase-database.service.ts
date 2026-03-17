@@ -273,6 +273,18 @@ export class SupabaseDatabaseService {
         );
     }
 
+    fetchModels(): Observable<PeecModel[]> {
+        return from(
+            this.supabase
+                .from(this.tables.PEEC_MODELS)
+                .select('*')
+                .then((res) => {
+                    if (res.error) throw res.error;
+                    return (res.data || []) as PeecModel[];
+                })
+        );
+    }
+
     /**
      * Fetch brand visibility history with optional filters
      */
@@ -358,18 +370,30 @@ export class SupabaseDatabaseService {
      * NOTE: PK is 'chat_id', not 'id'
      */
     fetchConversations(filters?: {
+        startDate?: string;
+        endDate?: string;
         limit?: number;
     }): Observable<LlmData[]> {
         return from(
-            this.supabase
-                .from(this.tables.LLM_DATA)
-                .select('*')
-                .order('created_at', { ascending: false })
-                .limit(filters?.limit ?? 100)
-                .then((res) => {
-                    if (res.error) throw res.error;
-                    return (res.data || []) as LlmData[];
-                })
+            (async () => {
+                let query = this.supabase
+                    .from(this.tables.LLM_DATA)
+                    .select('*');
+
+                if (filters?.startDate) {
+                    query = query.gte('created_at', filters.startDate);
+                }
+                if (filters?.endDate) {
+                    query = query.lte('created_at', filters.endDate + 'T23:59:59');
+                }
+
+                const { data, error } = await query
+                    .order('created_at', { ascending: false })
+                    .limit(filters?.limit ?? 100);
+
+                if (error) throw error;
+                return (data || []) as LlmData[];
+            })()
         );
     }
 
