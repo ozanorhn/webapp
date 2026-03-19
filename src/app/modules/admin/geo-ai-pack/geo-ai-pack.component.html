@@ -362,7 +362,7 @@
                                 <thead>
                                     <tr class="border-b border-gray-200 dark:border-gray-700">
                                         <th class="px-4 py-3 text-left font-semibold text-secondary">Prompt</th>
-                                        <th class="w-24 px-4 py-3 text-right font-semibold text-secondary">Volume</th>
+                                        <th class="w-28 px-4 py-3 text-center font-semibold text-secondary">Volume</th>
                                         <th class="w-16 px-4 py-3 text-center font-semibold text-secondary">Land</th>
                                     </tr>
                                 </thead>
@@ -376,9 +376,21 @@
                                                     <mat-icon class="icon-size-3.5 shrink-0 text-secondary" [svgIcon]="'heroicons_outline:arrow-top-right-on-square'"></mat-icon>
                                                 </div>
                                             </td>
-                                            <td class="px-4 py-3 text-right font-semibold tabular-nums">
+                                            <td class="px-4 py-3 text-center">
                                                 @if (prompt.volume) {
-                                                    {{ prompt.volume | number }}
+                                                    <div class="group/vol relative inline-flex cursor-default items-center gap-1.5"
+                                                         [matTooltip]="getVolumeTooltip(prompt.volume)">
+                                                        <div class="flex items-end gap-[3px]">
+                                                            @for (i of [1,2,3,4,5]; track i) {
+                                                                <div class="w-[5px] rounded-sm transition-all duration-300"
+                                                                     [class.bg-green-500]="i <= prompt.volume"
+                                                                     [class.bg-gray-300]="i > prompt.volume"
+                                                                     [class.dark:bg-green-400]="i <= prompt.volume"
+                                                                     [class.dark:bg-gray-600]="i > prompt.volume"
+                                                                     [style.height.px]="8 + (i * 3)"></div>
+                                                            }
+                                                        </div>
+                                                    </div>
                                                 } @else {
                                                     <span class="text-secondary">–</span>
                                                 }

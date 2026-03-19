@@ -327,6 +327,18 @@ export class GeoAiPackComponent implements OnInit, OnDestroy {
         this.expandedDialogConversations.set(new Set());
     }
 
+    private _volumeTooltips: Record<number, string> = {
+        1: '1 – Sehr geringes Suchvolumen im Vergleich zu deiner Branche',
+        2: '2 – Geringes Suchvolumen im Vergleich zu deiner Branche',
+        3: '3 – Mittleres Suchvolumen im Vergleich zu deiner Branche',
+        4: '4 – Hohes Suchvolumen im Vergleich zu deiner Branche',
+        5: '5 – Sehr hohes Suchvolumen im Vergleich zu deiner Branche',
+    };
+
+    getVolumeTooltip(volume: number): string {
+        return this._volumeTooltips[volume] || `${volume}`;
+    }
+
     openPromptDetail(prompt: PeecPrompt): void {
         this.openDialog({ type: 'prompt', prompt });
     }
