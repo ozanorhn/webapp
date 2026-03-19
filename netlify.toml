@@ -1,0 +1,14 @@
+[build]
+  publish = "dist/fuse/browser"
+  command = "npm run build"
+
+[[redirects]]
+  from = "/api/supabase/*"
+  to = "https://pw.eom.de/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
