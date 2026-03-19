@@ -4,7 +4,7 @@
 
 [[redirects]]
   from = "/api/supabase/*"
-  to = "https://pw.eom.de/:splat"
+  to = "https://pw.eom.de:8443/:splat"
   status = 200
   force = true
 
