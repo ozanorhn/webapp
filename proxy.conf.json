@@ -8,7 +8,7 @@
         }
     },
     "/api/supabase": {
-        "target": "https://pw.eom.de:8443",
+        "target": "http://pw.eom.de:8000",
         "secure": false,
         "changeOrigin": true,
         "pathRewrite": {
