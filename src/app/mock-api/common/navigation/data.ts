@@ -7,21 +7,21 @@ const navigationItems: FuseNavigationItem[] = [
         title: 'Dashboard',
         type : 'basic',
         icon : 'heroicons_outline:home',
-        link : '/dashboard'
+        link : '/eom/dashboard/startseite'
     },
     {
         id   : 'analytics',
         title: 'Analytics',
         type : 'basic',
         icon : 'heroicons_outline:chart-bar-square',
-        link : '/analytics'
+        link : '/eom/dashboard/analytics'
     },
     {
         id   : 'sistrix',
         title: 'Sistrix',
         type : 'basic',
         icon : 'heroicons_outline:magnifying-glass',
-        link : '/sistrix'
+        link : '/eom/dashboard/sistrix'
     },
 
      {
@@ -29,7 +29,7 @@ const navigationItems: FuseNavigationItem[] = [
         title: 'GEO AI',
         type : 'basic',
         icon : 'heroicons_outline:globe-alt',
-        link : '/geo-ai-pack'
+        link : '/eom/dashboard/geo-ai-pack'
     },
    
 ];

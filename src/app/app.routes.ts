@@ -9,15 +9,15 @@ import { LayoutComponent } from 'app/layout/layout.component';
 /* eslint-disable @typescript-eslint/explicit-function-return-type */
 export const appRoutes: Route[] = [
 
-    // Redirect empty path to '/dashboard'
-    {path: '', pathMatch : 'full', redirectTo: 'dashboard'},
+    // Redirect empty path to '/eom/dashboard/startseite'
+    {path: '', pathMatch : 'full', redirectTo: 'eom/dashboard/startseite'},
 
-    // Redirect signed-in user to the '/dashboard'
+    // Redirect signed-in user to the '/eom/dashboard/startseite'
     //
     // After the user signs in, the sign-in page will redirect the user to the 'signed-in-redirect'
     // path. Below is another redirection for that path to redirect the user to the desired
     // location. This is a small convenience to keep all main routes together here on this file.
-    {path: 'signed-in-redirect', pathMatch : 'full', redirectTo: 'dashboard'},
+    {path: 'signed-in-redirect', pathMatch : 'full', redirectTo: 'eom/dashboard/startseite'},
 
     // Auth routes for guests
     {
@@ -75,10 +75,10 @@ export const appRoutes: Route[] = [
         },
         children: [
             {path: 'example', loadChildren: () => import('app/modules/admin/example/example.routes')},
-            {path: 'dashboard', loadChildren: () => import('app/modules/admin/dashboard/dashboard.routes')},
-            {path: 'analytics', loadChildren: () => import('app/modules/admin/analytics/analytics.routes')},
-            {path: 'sistrix', loadChildren: () => import('app/modules/admin/sistrix/sistrix.routes')},
-            {path: 'geo-ai-pack', loadChildren: () => import('app/modules/admin/geo-ai-pack/geo-ai-pack.routes')},
+            {path: 'eom/dashboard/startseite', loadChildren: () => import('app/modules/admin/dashboard/dashboard.routes')},
+            {path: 'eom/dashboard/analytics', loadChildren: () => import('app/modules/admin/analytics/analytics.routes')},
+            {path: 'eom/dashboard/sistrix', loadChildren: () => import('app/modules/admin/sistrix/sistrix.routes')},
+            {path: 'eom/dashboard/geo-ai-pack', loadChildren: () => import('app/modules/admin/geo-ai-pack/geo-ai-pack.routes')},
         ]
     }
 ];
